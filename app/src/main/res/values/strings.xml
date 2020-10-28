@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Daily Bing Wallpapers</string>
+
+    <string name="today">Today</string>
+
+    <string name="preview">Preview</string>
+    <string name="activity_main_wallpapers_gallery_header">Discover</string>
+
+    <string name="activity_main_wallpaper_date_shown_label">Date:</string>
+    <string name="activity_main_wallpaper_copyright_label">Copyright:</string>
+    <string name="activity_main_wallpaper_copyright_link_label">Copyright Link:</string>
+</resources>

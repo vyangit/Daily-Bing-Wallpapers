@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spacing">10dp</dimen>
+
+    <dimen name="corner_radius">8dp</dimen>
+    <dimen name="wallpaper_preview_width">140dp</dimen>
+</resources>
