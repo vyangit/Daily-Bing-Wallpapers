@@ -13,20 +13,13 @@ class MainViewModel(private val repo: BingImageRepository): ViewModel() {
         val FACTORY = singleArgViewModelFactory(::MainViewModel)
     }
 
+    val galleryImages = repo.bingImages
+
     private val _previewImage = MutableLiveData<BingImage>()
     val previewImage: LiveData<BingImage>
         get() = _previewImage
 
-    private val _galleryImages = MutableLiveData<List<BingImage>>()
-    val galleryImages: LiveData<List<BingImage>>
-        get() = _galleryImages
-
     fun onPreviewWallpaperSelected(image: BingImage) {
         _previewImage.value = image
     }
-
-    fun onUpdateExploreView() {
-
-    }
-
 }

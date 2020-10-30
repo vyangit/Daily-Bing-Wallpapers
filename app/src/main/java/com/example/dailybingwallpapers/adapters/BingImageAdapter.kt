@@ -12,7 +12,7 @@ import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.storage.database.entities.BingImage
 import com.google.android.material.textview.MaterialTextView
 
-class BingImageAdapter(): RecyclerView.Adapter<BingImageAdapter.BingImageViewHolder>() {
+class BingImageAdapter: RecyclerView.Adapter<BingImageAdapter.BingImageViewHolder>() {
 
     private var _bingImages: List<BingImage> = listOf()
     var bingImages: List<BingImage>

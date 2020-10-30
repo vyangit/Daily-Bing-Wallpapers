@@ -1,12 +1,16 @@
 package com.example.dailybingwallpapers.storage.database.repos
 
+import androidx.lifecycle.LiveData
 import com.example.dailybingwallpapers.storage.database.dao.BingImageDao
 import com.example.dailybingwallpapers.network.BingWallpaperNetwork
+import com.example.dailybingwallpapers.storage.database.entities.BingImage
 
-class BingImageRepository(val network: BingWallpaperNetwork, val bingImageDao: BingImageDao) {
+class BingImageRepository(private val network: BingWallpaperNetwork, private val bingImageDao: BingImageDao) {
+
+    val bingImages: LiveData<List<BingImage>> = bingImageDao.allBingImages
 
     suspend fun getLastFiveRecentBingImages() {
-        //TODO: Implement
+        //TODO: Implement when adding no saving option wallpapers on phone
     }
 
 }
