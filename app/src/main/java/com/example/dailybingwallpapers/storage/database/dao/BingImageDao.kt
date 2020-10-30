@@ -1,11 +1,11 @@
-package com.example.dailybingwallpapers.database.dao
+package com.example.dailybingwallpapers.storage.database.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.dailybingwallpapers.database.entities.BingImage
+import com.example.dailybingwallpapers.storage.database.entities.BingImage
 
 @Dao
 interface BingImageDao {

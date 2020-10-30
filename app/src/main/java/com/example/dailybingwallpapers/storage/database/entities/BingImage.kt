@@ -1,10 +1,8 @@
-package com.example.dailybingwallpapers.database.entities
+package com.example.dailybingwallpapers.storage.database.entities
 
-import android.media.Image
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDate
-import java.util.*
 
 @Entity
 data class BingImage (

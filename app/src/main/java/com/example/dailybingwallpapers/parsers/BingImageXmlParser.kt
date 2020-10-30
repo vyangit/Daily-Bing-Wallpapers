@@ -2,7 +2,7 @@ package com.example.dailybingwallpapers.parsers
 
 import android.media.Image
 import android.util.Xml
-import com.example.dailybingwallpapers.database.entities.BingImage
+import com.example.dailybingwallpapers.storage.database.entities.BingImage
 import com.example.dailybingwallpapers.network.dto.BingImageMetaDataDTO
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
