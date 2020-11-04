@@ -9,6 +9,10 @@ class BingImageRepository(private val network: BingWallpaperNetwork, private val
 
     val bingImages: LiveData<List<BingImage>> = bingImageDao.allBingImages
 
+    suspend fun importMissingBingImages() {
+        //TODO: Implement
+    }
+
     suspend fun getLastFiveRecentBingImages() {
         //TODO: Implement when adding no saving option wallpapers on phone
     }

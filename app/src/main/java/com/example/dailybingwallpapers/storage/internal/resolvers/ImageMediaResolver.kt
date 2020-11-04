@@ -4,5 +4,5 @@ import android.content.ContentResolver
 import android.content.Context
 
 class ImageMediaResolver(private val context: Context): ContentResolver(context) {
-    //TODO: Implement
+
 }

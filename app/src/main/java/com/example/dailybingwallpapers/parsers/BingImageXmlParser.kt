@@ -49,6 +49,7 @@ class BingImageXmlParser {
         return images
     }
 
+    @Throws(XmlPullParserException::class, IOException::class)
     private fun readImage(parser: XmlPullParser): BingImageMetaDataDTO {
         parser.require(XmlPullParser.START_TAG, ns, "image")
         var date: LocalDate? = null
