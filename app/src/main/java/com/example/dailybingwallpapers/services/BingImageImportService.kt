@@ -26,7 +26,7 @@ class BingImageImportService: Service() {
 
         database = AppDatabase.getDatabase(this)
         network = BingWallpaperNetwork.getService()
-        repo = BingImageRepository(network, database.bingImageDao)
+        repo = BingImageRepository(this, network, database.bingImageDao)
 
         // Android 8 >= foreground promotion needed
         marshallNotificationChannel()

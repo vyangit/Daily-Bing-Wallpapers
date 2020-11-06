@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         val database = AppDatabase.getDatabase(this)
         val network = BingWallpaperNetwork.getService()
-        val repo = BingImageRepository(network, database.bingImageDao)
+        val repo = BingImageRepository(this, network, database.bingImageDao)
         val viewModel = ViewModelProvider(this, MainViewModel.FACTORY(repo)).get(MainViewModel::class.java)
 
         wallpaperGalleryGridRecyclerView = findViewById<RecyclerView>(R.id.activity_main_wallpapers_gallery)

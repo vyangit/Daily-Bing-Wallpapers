@@ -1,8 +1,10 @@
 package com.example.dailybingwallpapers.network
 
 import android.app.DownloadManager
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -23,6 +25,7 @@ import java.net.URL
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
+import java.util.Objects.isNull
 
 // TODO: Add support for mkt parameter
 const val bingImageApiUrlFormat =
@@ -150,34 +153,39 @@ class BingWallpaperNetwork {
     }
 
     private suspend fun importImageFromUrl(context: Context, imageUrl: String, imageName: String): String {
-        // Fetch bitmap to save
-        val bm = fetchImageFromUrl(imageUrl)
-
         // Set up file descriptors to save to device
-        val appDir = Environment.DIRECTORY_PICTURES + File.pathSeparator + "Daily Bing Wallpapers"
-        val appDirUri = MediaStore.Images.Media.getContentUri(appDir)
+        val appDir = Environment.DIRECTORY_PICTURES + File.separator + context.getString(R.string.app_name)
+
         val imageDetails = ContentValues().apply {
             put(MediaStore.Images.ImageColumns.DISPLAY_NAME, imageName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg")
+            put(MediaStore.Images.ImageColumns.TITLE, imageName)
+            put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/jpg")
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(MediaStore.Images.ImageColumns.RELATIVE_PATH, appDir)
-                put(MediaStore.Images.Media.IS_PENDING, 1)
+                put(MediaStore.Images.ImageColumns.IS_PENDING, 1)
             }
         }
 
         // Stream in image data to external storage
         val resolver = context.contentResolver
-        val imageContentUri = resolver.insert(appDirUri, imageDetails)!!
-        resolver.openFileDescriptor(imageContentUri, "w", null)!!.use {pfd ->
-            val output: OutputStream = FileOutputStream(pfd.fileDescriptor)
-            val isWritten = bm.compress(Bitmap.CompressFormat.JPEG, 100, output)
-        }
+        val imageContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
-        // Update global access after import
-        imageDetails.clear()
-        imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
-        resolver.update(imageContentUri, imageDetails, null, null)
+        val cursor = getImageEntry(resolver, imageName, appDir)
+
+        if (cursor.count == 0) {
+            val uri = resolver.insert(imageContentUri, imageDetails)!!
+            resolver.openOutputStream(uri, "w")!!.use { os ->
+                // Fetch bitmap to save
+                val bm = fetchImageFromUrl(imageUrl)
+                val isWritten = bm.compress(Bitmap.CompressFormat.JPEG, 100, os)
+            }
+
+            // Update global access after import
+            imageDetails.clear()
+            imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, imageDetails, null, null)
+        }
 
         return imageContentUri.toString()
     }
@@ -186,7 +194,7 @@ class BingWallpaperNetwork {
         val imageUrlPart = bingImageMetaDataDTO.imageUrl.let { imageUrl ->
             imageUrl.substring(
                 imageUrl.indexOf("id=") + 3,
-                imageUrl.indexOf(".jpg" + 4)
+                imageUrl.indexOf(".jpg") + 4
             )
         }
 
@@ -199,5 +207,22 @@ class BingWallpaperNetwork {
         val url = URL(imageUrl)
         val bis = BufferedInputStream(url.openStream())
         return BitmapFactory.decodeStream(bis)
+    }
+
+    private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String, imageRelativePath: String): Cursor {
+        val projection = mutableListOf(
+            MediaStore.Images.ImageColumns.DISPLAY_NAME
+        )
+
+        var selectionClause = MediaStore.Files.FileColumns.DISPLAY_NAME + " = ?"
+        val selectionArgs = mutableListOf<String>(imageDisplayName)
+
+        return resolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection.toTypedArray(),
+            selectionClause,
+            selectionArgs.toTypedArray(),
+            ""
+        )!!
     }
 }
