@@ -14,8 +14,8 @@ class BingImageRepository(
     val bingImages: LiveData<List<BingImage>> = bingImageDao.allBingImages
 
     suspend fun importMissingBingImages() {
-        //TODO: Implement
-        network.getAllOnlineWallpapersSinceLastUpdate(context)
+        val bingImageMetaData = network.getAllOnlineWallpapersSinceLastUpdate(context)
+//        bingImageDao.insertAllBingImages(bingImageMetaData)
     }
 
     suspend fun getLastFiveRecentBingImages() {

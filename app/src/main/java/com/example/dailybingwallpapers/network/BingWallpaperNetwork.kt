@@ -1,13 +1,11 @@
 package com.example.dailybingwallpapers.network
 
-import android.app.DownloadManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -25,12 +23,12 @@ import java.net.URL
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
-import java.util.Objects.isNull
 
 // TODO: Add support for mkt parameter
+// TODO: Readjust for Bing Image APIs idx threshold case (after idx=8 all entries start from idx=8)
 const val bingImageApiUrlFormat =
     "https://www.bing.com/HPImageArchive.aspx?format=xml&idx=%d&n=%d&mkt=en-US"
-const val IMAGES_ONLINE_MAX = 16  // Bing Image API only saves the last 16 images online
+const val IMAGES_ONLINE_MAX = 15  // Bing Image API only saves the last 16 images online
 const val ENTRIES_PER_QUERY_MAX = 8 // Bing Image API only allows queries of 8 entries at a time
 
 class BingWallpaperNetwork {
@@ -59,7 +57,7 @@ class BingWallpaperNetwork {
         if (lastUpdateTime.isNullOrBlank()) {
             return getAllOnlineWallpapers(context)
         } else {
-            var period = Period.between(
+            val period = Period.between(
                 LocalDate.parse(
                     lastUpdateTime,
                     DateTimeFormatter.ISO_LOCAL_DATE),
@@ -70,17 +68,17 @@ class BingWallpaperNetwork {
             if (period.years > 0 || period.months > 0) {
                 numMissedDays = IMAGES_ONLINE_MAX
             } else if ( period.days > 0) {
-                numMissedDays = max(IMAGES_ONLINE_MAX, period.days)
+                numMissedDays = min(IMAGES_ONLINE_MAX, period.days)
             }
 
-            return getAllOnlineWallpapers(context)
+            return getOnlineWallpapersSinceToday(context, numMissedDays)
         }
     }
 
     /**
      * Queries the Bing Image API for as many wallpaper images that are current online (max. ~16)
      */
-    suspend fun getOnlineWallpapersSinceToday(context: Context, numImagesSinceToday: Int): List<BingImage> {
+    private suspend fun getOnlineWallpapersSinceToday(context: Context, numImagesSinceToday: Int): List<BingImage> {
         return if (numImagesSinceToday < IMAGES_ONLINE_MAX)
             getWallpapers(context, 0, numImagesSinceToday) else
             getAllOnlineWallpapers(context)
@@ -90,7 +88,7 @@ class BingWallpaperNetwork {
     /**
      * Queries the Bing Image API for as many wallpaper images that are current online (max. ~16)
      */
-    suspend fun getAllOnlineWallpapers(context: Context): List<BingImage> {
+    private suspend fun getAllOnlineWallpapers(context: Context): List<BingImage> {
         return getWallpapers(context, 0, IMAGES_ONLINE_MAX)
     }
 
@@ -103,16 +101,20 @@ class BingWallpaperNetwork {
 
         if (daysBeforeToday < 0 || numImagesSince < 1) return images
 
-        // Bing Image API will query the last N number of entries if [daysBeforeToday] is out of range
-        var numPossibleEntries = min(numImagesSince, IMAGES_ONLINE_MAX - daysBeforeToday)
-        if (numPossibleEntries == 0) return images
-        var daysBefore = daysBeforeToday
+        // Bing Image API thresholds at 8 and always retrieves starting at 7 after (i.e idx=9->7)
+        var i = min(numImagesSince, IMAGES_ONLINE_MAX - daysBeforeToday)
+        if (i == 0) return images
 
-        while (numPossibleEntries > 0) {
+        var j = daysBeforeToday
+
+        while (i > 0) {
             // Get the xml to parse
-            val qualifiedLink = bingImageApiUrlFormat.format(daysBeforeToday, min(numPossibleEntries, 8))
+            val daysBefore = min(7, j)
+            var skips = max(0, j-7)
+            val querySize = if (daysBefore < 7) i else i+skips
 
-            //TODO: Fix blocking functions
+            val qualifiedLink = bingImageApiUrlFormat.format(daysBefore, querySize)
+
             val url = withContext(IO) { URL(qualifiedLink) }
             val xml = withContext(IO) {
                 url.run {
@@ -127,6 +129,8 @@ class BingWallpaperNetwork {
             val imageMetaData = bingImageXmlParser.parse(xml)
 
             for (data in imageMetaData) {
+                if (skips-- > 0) continue;
+
                 // Import image from url to device for caching
                 val imageName = getUniqueBingImageName(data)
                 val imageDeviceUri = importImageFromUrl(context, data.imageUrl, imageName)
@@ -134,7 +138,6 @@ class BingWallpaperNetwork {
                 // Create entity objects from dto information
                 images.add(
                     BingImage(
-                        0,
                         data.date,
                         data.imageUrl,
                         imageDeviceUri,
@@ -146,8 +149,8 @@ class BingWallpaperNetwork {
             }
 
             // Import and parse any remaining images
-            numPossibleEntries -= 8
-            daysBefore += 8
+            i -= ENTRIES_PER_QUERY_MAX
+            j += ENTRIES_PER_QUERY_MAX
         }
         return images
     }
@@ -171,21 +174,25 @@ class BingWallpaperNetwork {
         val resolver = context.contentResolver
         val imageContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
-        val cursor = getImageEntry(resolver, imageName, appDir)
+        val cursor = getImageEntry(resolver, imageName)
 
         if (cursor.count == 0) {
             val uri = resolver.insert(imageContentUri, imageDetails)!!
             resolver.openOutputStream(uri, "w")!!.use { os ->
                 // Fetch bitmap to save
                 val bm = fetchImageFromUrl(imageUrl)
-                val isWritten = bm.compress(Bitmap.CompressFormat.JPEG, 100, os)
+                bm.compress(Bitmap.CompressFormat.JPEG, 100, os)
             }
 
             // Update global access after import
-            imageDetails.clear()
-            imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
-            resolver.update(uri, imageDetails, null, null)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                imageDetails.clear()
+                imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, imageDetails, null, null)
+            }
         }
+
+        cursor.close()
 
         return imageContentUri.toString()
     }
@@ -209,12 +216,12 @@ class BingWallpaperNetwork {
         return BitmapFactory.decodeStream(bis)
     }
 
-    private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String, imageRelativePath: String): Cursor {
+    private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String): Cursor {
         val projection = mutableListOf(
             MediaStore.Images.ImageColumns.DISPLAY_NAME
         )
 
-        var selectionClause = MediaStore.Files.FileColumns.DISPLAY_NAME + " = ?"
+        val selectionClause = MediaStore.Files.FileColumns.DISPLAY_NAME + " = ?"
         val selectionArgs = mutableListOf<String>(imageDisplayName)
 
         return resolver.query(
