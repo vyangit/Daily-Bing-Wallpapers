@@ -46,9 +46,12 @@ class MainActivity : AppCompatActivity() {
         val repo = BingImageRepository(this, network, database.bingImageDao)
         val viewModel = ViewModelProvider(this, MainViewModel.FACTORY(repo)).get(MainViewModel::class.java)
 
-        wallpaperGalleryGridRecyclerView = findViewById<RecyclerView>(R.id.activity_main_wallpapers_gallery)
+        wallpaperGalleryGridRecyclerView = findViewById(R.id.activity_main_wallpapers_gallery)
         wallpaperGalleryGridAdapter = BingImageAdapter()
         wallpaperGalleryGridLayoutManager = GridLayoutManager(this, 1, GridLayoutManager.HORIZONTAL, false)
+
+        wallpaperGalleryGridRecyclerView.layoutManager = wallpaperGalleryGridLayoutManager
+        wallpaperGalleryGridRecyclerView.adapter = wallpaperGalleryGridAdapter
 
         viewModel.previewImage.observe(this) {value ->
             value?.let {
@@ -63,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         viewModel.galleryImages.observe(this) {list ->
             list?.let {
                 wallpaperGalleryGridAdapter.bingImages = list
+                wallpaperGalleryGridAdapter.notifyDataSetChanged()
             }
         }
 

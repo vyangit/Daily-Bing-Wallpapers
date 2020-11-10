@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
@@ -21,20 +22,17 @@ class BingImageAdapter: RecyclerView.Adapter<BingImageAdapter.BingImageViewHolde
             _bingImages = list
         }
 
-    class BingImageViewHolder(
-        val imageView: ImageView,
-        val dateText: MaterialTextView): RecyclerView.ViewHolder(imageView) {
+    class BingImageViewHolder(private val galleryLayout: View): RecyclerView.ViewHolder(galleryLayout) {
+        val imageView : ImageView = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_image)
+        val dateText : MaterialTextView = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_date)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingImageViewHolder {
         val galleryLayout = LayoutInflater.from(parent.context)
-            .inflate(R.layout.activity_main_wallpaper_gallery_grid_item, parent, false) as ConstraintLayout
-        val galleryGridItemImageView = galleryLayout
-            .findViewById<ImageView>(R.id.activity_main_wallpapers_gallery_grid_item_image)
-        val galleryGridItemDateText = galleryLayout
-            .findViewById<MaterialTextView>(R.id.activity_main_wallpapers_gallery_grid_item_date)
-
-        return BingImageViewHolder(galleryGridItemImageView, galleryGridItemDateText)
+            .inflate(R.layout.activity_main_wallpaper_gallery_grid_item, parent, false) as LinearLayout
+        return BingImageViewHolder(galleryLayout)
     }
 
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {

@@ -15,7 +15,7 @@ class BingImageRepository(
 
     suspend fun importMissingBingImages() {
         val bingImageMetaData = network.getAllOnlineWallpapersSinceLastUpdate(context)
-//        bingImageDao.insertAllBingImages(bingImageMetaData)
+        bingImageDao.insertAllBingImages(bingImageMetaData)
     }
 
     suspend fun getLastFiveRecentBingImages() {

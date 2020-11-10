@@ -6,6 +6,7 @@ import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -23,6 +24,7 @@ import java.net.URL
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
+import java.util.Objects.isNull
 
 // TODO: Add support for mkt parameter
 // TODO: Readjust for Bing Image APIs idx threshold case (after idx=8 all entries start from idx=8)
@@ -136,16 +138,18 @@ class BingWallpaperNetwork {
                 val imageDeviceUri = importImageFromUrl(context, data.imageUrl, imageName)
 
                 // Create entity objects from dto information
-                images.add(
-                    BingImage(
-                        data.date,
-                        data.imageUrl,
-                        imageDeviceUri,
-                        data.copyright,
-                        data.copyrightLink,
-                        data.headline
+                if (!imageDeviceUri.isBlank()) {
+                    images.add(
+                        BingImage(
+                            data.date,
+                            data.imageUrl,
+                            imageDeviceUri,
+                            data.copyright,
+                            data.copyrightLink,
+                            data.headline
+                        )
                     )
-                )
+                }
             }
 
             // Import and parse any remaining images
@@ -175,9 +179,10 @@ class BingWallpaperNetwork {
         val imageContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
         val cursor = getImageEntry(resolver, imageName)
+        var uri: Uri? = null
 
         if (cursor.count == 0) {
-            val uri = resolver.insert(imageContentUri, imageDetails)!!
+            uri = resolver.insert(imageContentUri, imageDetails)!!
             resolver.openOutputStream(uri, "w")!!.use { os ->
                 // Fetch bitmap to save
                 val bm = fetchImageFromUrl(imageUrl)
@@ -194,7 +199,7 @@ class BingWallpaperNetwork {
 
         cursor.close()
 
-        return imageContentUri.toString()
+        return if (isNull(uri)) "" else uri.toString()
     }
 
     private fun getUniqueBingImageName(bingImageMetaDataDTO: BingImageMetaDataDTO): String {
