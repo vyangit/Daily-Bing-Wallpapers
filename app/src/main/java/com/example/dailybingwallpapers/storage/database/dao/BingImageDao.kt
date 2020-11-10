@@ -15,6 +15,6 @@ interface BingImageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllBingImages(bingImages: List<BingImage>)
 
-    @get:Query("select * from bing_image")
+    @get:Query("select * from bing_image order by date desc")
     val allBingImages: LiveData<List<BingImage>>
 }

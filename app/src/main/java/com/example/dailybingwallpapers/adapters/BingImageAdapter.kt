@@ -38,6 +38,9 @@ class BingImageAdapter: RecyclerView.Adapter<BingImageAdapter.BingImageViewHolde
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {
         val bingImage = bingImages[position]
         holder.imageView.setImageURI(Uri.parse(bingImage.imageDeviceUri))
+//        holder.imageView.setOnClickListener {
+//
+//        }
         holder.dateText.text = bingImage.date.toString()
     }
 
