@@ -15,12 +15,13 @@ import com.google.android.material.textview.MaterialTextView
 
 class BingImageAdapter: RecyclerView.Adapter<BingImageAdapter.BingImageViewHolder>() {
 
-    private var _bingImages: List<BingImage> = listOf()
-    var bingImages: List<BingImage>
-        get() = _bingImages
-        set(list) {
-            _bingImages = list
+    var bingImages: List<BingImage> = listOf()
+    var bingImageSelectedListener: OnBingImageSelectedListener = object:
+        OnBingImageSelectedListener {
+        override fun onBingImageSelected(bingImage: BingImage) {
+            // Do nothing as default
         }
+    }
 
     class BingImageViewHolder(private val galleryLayout: View): RecyclerView.ViewHolder(galleryLayout) {
         val imageView : ImageView = galleryLayout
@@ -38,14 +39,18 @@ class BingImageAdapter: RecyclerView.Adapter<BingImageAdapter.BingImageViewHolde
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {
         val bingImage = bingImages[position]
         holder.imageView.setImageURI(Uri.parse(bingImage.imageDeviceUri))
-//        holder.imageView.setOnClickListener {
-//
-//        }
+        holder.imageView.setOnClickListener {
+            bingImageSelectedListener.onBingImageSelected(bingImage)
+        }
         holder.dateText.text = bingImage.date.toString()
     }
 
     override fun getItemCount(): Int {
         return bingImages.size
+    }
+
+    interface OnBingImageSelectedListener {
+        fun onBingImageSelected(bingImage: BingImage)
     }
 
 }

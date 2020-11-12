@@ -1,5 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Daily Bing Wallpapers</string>
+
+    <string name="ok">OK</string>
+    <string name="na">N/A</string>
+
+    <string name="storage_permission_required">Storage access is required to display the imported Bing images.</string>
+    <string name="storage_permission_not_available">Storage is not available. Requesting storage permission.</string>
+    <string name="storage_permission_available">Storage permission is available. Loading images.</string>
+    <string name="storage_permission_granted">Storage permission was granted. Loading images.</string>
+    <string name="storage_permission_denied">Storage permission request was denied.</string>
+
     <string name="shared_prefs_app_globals_file_key">GLOBAL</string>
     <string name="shared_prefs_app_globals_last_update_time">GLOBAL_LAST_UPDATE_TIME</string>
 
@@ -13,6 +24,14 @@
     <string name="activity_main_wallpaper_date_shown_label">Date:</string>
     <string name="activity_main_wallpaper_copyright_label">Copyright:</string>
     <string name="activity_main_wallpaper_copyright_link_label">Copyright Link:</string>
+    <string name="activity_main_preview_wallpaper_image_storage_denied_text">
+        Preview requires storage access.<br/>
+        To allow app permissions follow: Settings > Apps &amp; notifications > See all apps > Daily Bing Wallpapers > Permissions
+    </string>
+    <string name="activity_main_preview_wallpapers_gallery_storage_denied_text">
+        Discovery requires storage access.<br/>
+        To allow app permissions follow: Settings > Apps &amp; notifications > See all apps > Daily Bing Wallpapers > Permissions
+    </string>
 
     <string name="import_service_notification_title">Downloading Bing images...</string>
 </resources>
