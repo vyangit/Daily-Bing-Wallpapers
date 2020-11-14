@@ -32,7 +32,9 @@ const val PERMISSION_REQUEST_READ_STORAGE = 0
 
 class MainActivity : AppCompatActivity(),
     BingImageAdapter.OnBingImageSelectedListener,
-    BingImageAdapter.OnBingImageLongClickListener {
+    BingImageAdapter.OnBingImageLongClickListener,
+    BingImageAdapter.OnDailyItemSelectedListener,
+    BingImageAdapter.OnDailyItemLongClickListener {
     private lateinit var layout: View
 
     private lateinit var mainViewModel: MainViewModel
@@ -102,6 +104,14 @@ class MainActivity : AppCompatActivity(),
         val inflater = pMenu.menuInflater
         inflater.inflate(R.menu.activity_main_gallery_item_menu, pMenu.menu)
         pMenu.show()
+    }
+
+    override fun onDailyItemSelected() {
+        TODO("Not yet implemented")
+    }
+
+    override fun onDailyItemLongClick(view: View) {
+        TODO("Not yet implemented")
     }
 
     private fun requestStoragePermission() {

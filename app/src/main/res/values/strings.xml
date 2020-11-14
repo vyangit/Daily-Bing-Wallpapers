@@ -17,6 +17,7 @@
     <string name="shared_prefs_app_settings_file_key">SETTINGS</string>
 
     <string name="today">Today</string>
+    <string name="daily">Daily</string>
 
     <string name="preview">Preview</string>
     <string name="activity_main_wallpapers_gallery_header">Discover</string>

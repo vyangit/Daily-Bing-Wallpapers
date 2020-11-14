@@ -22,9 +22,20 @@ class BingImageAdapter :
         fun onBingImageLongClickListener(view: View, bingImage: BingImage)
     }
 
+    interface OnDailyItemSelectedListener {
+        fun onDailyItemSelected()
+    }
+
+    interface OnDailyItemLongClickListener {
+        fun onDailyItemLongClick(view: View)
+    }
+
+
     var bingImages: List<BingImage> = listOf()
     lateinit var bingImageSelectedListener: OnBingImageSelectedListener
     lateinit var bingImageLongClickListener: OnBingImageLongClickListener
+    lateinit var dailyItemSelectedListener: OnDailyItemSelectedListener
+    lateinit var dailyItemLongClickListener: OnDailyItemLongClickListener
 
     class BingImageViewHolder(private val galleryLayout: View) :
         RecyclerView.ViewHolder(galleryLayout) {
@@ -41,26 +52,47 @@ class BingImageAdapter :
     }
 
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {
-        val bingImage = bingImages[position]
-        holder.imageView.setImageURI(Uri.parse(bingImage.imageDeviceUri))
+        if (position == 0) {
+            holder.imageView.setImageResource(R.drawable.ic_baseline_daily)
+            holder.imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+            holder.dateText.setText(R.string.daily)
 
-        if (this::bingImageSelectedListener.isInitialized) {
-            holder.imageView.setOnClickListener {
-                bingImageSelectedListener.onBingImageSelected(bingImage)
+            if (this::dailyItemSelectedListener.isInitialized) {
+                holder.imageView.setOnClickListener {
+                    dailyItemSelectedListener.onDailyItemSelected()
+                }
             }
-        }
 
-        if (this::bingImageLongClickListener.isInitialized) {
-            holder.imageView.setOnLongClickListener { view ->
-                bingImageLongClickListener.onBingImageLongClickListener(view, bingImage)
-                true
+            if (this::dailyItemLongClickListener.isInitialized) {
+                holder.imageView.setOnLongClickListener { view ->
+                    dailyItemLongClickListener.onDailyItemLongClick(view)
+                    true
+                }
             }
-        }
+        } else {
+            val bingImage = bingImages[position - 1]
+            holder.imageView.setImageURI(Uri.parse(bingImage.imageDeviceUri))
+            holder.imageView.scaleType = ImageView.ScaleType.CENTER_CROP
 
-        holder.dateText.text = bingImage.date.toString()
+            if (this::bingImageSelectedListener.isInitialized) {
+                holder.imageView.setOnClickListener {
+                    bingImageSelectedListener.onBingImageSelected(bingImage)
+                }
+            }
+
+            if (this::bingImageLongClickListener.isInitialized) {
+                holder.imageView.setOnLongClickListener { view ->
+                    bingImageLongClickListener.onBingImageLongClickListener(view, bingImage)
+                    true
+                }
+            }
+
+            holder.dateText.text = bingImage.date.toString()
+        }
     }
 
     override fun getItemCount(): Int {
-        return bingImages.size
+        return bingImages.size + 1
     }
+
 }

@@ -10,4 +10,6 @@
 
     <color name="background_splash">#444444</color>
     <color name="text_color">#B1B1B1</color>
+
+    <color name="activity_main_gallery_grid_item_image_background">@color/background_splash</color>
 </resources>
