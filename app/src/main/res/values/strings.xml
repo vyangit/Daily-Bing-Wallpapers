@@ -34,6 +34,9 @@
         To allow app permissions follow: Settings > Apps &amp; notifications > See all apps > Daily Bing Wallpapers > Permissions
     </string>
 
+    <string name="activity_main_preview_wallpapers_gallery_daily_item_headline">Enjoy an inspiring Bing image a day</string>
+    <string name="activity_main_preview_wallpapers_gallery_daily_item_date">Daily</string>
+
     <string name="import_service_notification_title">Downloading Bing images</string>
 
     <string name="activity_main_gallery_item_menu_set_as">Set as</string>

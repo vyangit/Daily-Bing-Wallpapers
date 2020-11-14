@@ -57,6 +57,7 @@
                     android:layout_height="match_parent"
                     android:adjustViewBounds="true"
                     android:scaleType="centerCrop"
+                    android:background="@color/activity_main_preview_background"
                     android:src="@drawable/test_wallpaper"/>
             </androidx.cardview.widget.CardView>
 

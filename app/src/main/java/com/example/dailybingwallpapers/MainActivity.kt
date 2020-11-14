@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onDailyItemSelected() {
-        TODO("Not yet implemented")
+        mainViewModel.onPreviewWallpaperSelected(null)
     }
 
     override fun onDailyItemLongClick(view: View) {
@@ -170,26 +170,46 @@ class MainActivity : AppCompatActivity(),
 
         // Set view customization/triggers
         wallpaperGalleryGridAdapter = BingImageAdapter()
-        wallpaperGalleryGridLayoutManager = GridLayoutManager(this, 1, GridLayoutManager.HORIZONTAL, false)
+        wallpaperGalleryGridLayoutManager =
+            GridLayoutManager(this, 1, GridLayoutManager.HORIZONTAL, false)
 
         val previewImage: ImageView = findViewById(R.id.activity_main_preview_wallpaper_image)
-        val previewHeadlineText: MaterialTextView = findViewById(R.id.activity_main_preview_headline)
+        val previewHeadlineText: MaterialTextView =
+            findViewById(R.id.activity_main_preview_headline)
         val previewDetailsDateText: MaterialTextView = findViewById(R.id.activity_main_details_date)
-        val previewDetailsCopyrightText: MaterialTextView = findViewById(R.id.activity_main_details_copyright)
-        val previewDetailsCopyrightLinkText: MaterialTextView = findViewById(R.id.activity_main_details_copyright_link)
+        val previewDetailsCopyrightText: MaterialTextView =
+            findViewById(R.id.activity_main_details_copyright)
+        val previewDetailsCopyrightLinkText: MaterialTextView =
+            findViewById(R.id.activity_main_details_copyright_link)
 
+        wallpaperGalleryGridAdapter.dailyItemSelectedListener = this
+        wallpaperGalleryGridAdapter.dailyItemLongClickListener = this
         wallpaperGalleryGridAdapter.bingImageSelectedListener = this
         wallpaperGalleryGridAdapter.bingImageLongClickListener = this
         wallpaperGalleryGridRecyclerView.layoutManager = wallpaperGalleryGridLayoutManager
         wallpaperGalleryGridRecyclerView.adapter = wallpaperGalleryGridAdapter
 
-        mainViewModel.previewImage.observe(this) {value ->
-            value?.let {
-                previewHeadlineText.text = value.headline
-                previewImage.setImageURI(Uri.parse(value.imageDeviceUri))
-                previewDetailsDateText.text = value.date.toString()
-                previewDetailsCopyrightText.text = value.copyright
-                previewDetailsCopyrightLinkText.text = value.copyrightLink
+        mainViewModel.previewImage.observe(this) { value ->
+            if (value == null) {
+                previewHeadlineText.text =
+                    getString(R.string.activity_main_preview_wallpapers_gallery_daily_item_headline)
+                previewDetailsDateText.text =
+                    getString(R.string.activity_main_preview_wallpapers_gallery_daily_item_date)
+                previewDetailsCopyrightText.text = getString(R.string.na)
+                previewDetailsCopyrightLinkText.text = getString(R.string.na)
+
+                previewImage.setImageResource(R.drawable.ic_baseline_daily)
+                previewImage.scaleType = ImageView.ScaleType.FIT_CENTER
+            } else {
+                value.let {
+                    previewHeadlineText.text = value.headline
+                    previewDetailsDateText.text = value.date.toString()
+                    previewDetailsCopyrightText.text = value.copyright
+                    previewDetailsCopyrightLinkText.text = value.copyrightLink
+
+                    previewImage.setImageURI(Uri.parse(value.imageDeviceUri))
+                    previewImage.scaleType = ImageView.ScaleType.CENTER_CROP
+                }
             }
         }
 

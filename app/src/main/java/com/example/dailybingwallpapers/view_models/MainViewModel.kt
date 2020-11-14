@@ -1,7 +1,5 @@
 package com.example.dailybingwallpapers.view_models
 
-import android.graphics.Bitmap
-import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -15,11 +13,11 @@ class MainViewModel(private val repo: BingImageRepository): ViewModel() {
 
     val galleryImages = repo.bingImages
 
-    private val _previewImage = MutableLiveData<BingImage>()
-    val previewImage: LiveData<BingImage>
+    private val _previewImage = MutableLiveData<BingImage?>()
+    val previewImage: LiveData<BingImage?>
         get() = _previewImage
 
-    fun onPreviewWallpaperSelected(image: BingImage) {
+    fun onPreviewWallpaperSelected(image: BingImage?) {
         _previewImage.value = image
     }
 }
