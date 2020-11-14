@@ -4,53 +4,63 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.LinearLayout
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.storage.database.entities.BingImage
 import com.google.android.material.textview.MaterialTextView
 
-class BingImageAdapter: RecyclerView.Adapter<BingImageAdapter.BingImageViewHolder>() {
+class BingImageAdapter :
+    RecyclerView.Adapter<BingImageAdapter.BingImageViewHolder>() {
 
-    var bingImages: List<BingImage> = listOf()
-    var bingImageSelectedListener: OnBingImageSelectedListener = object:
-        OnBingImageSelectedListener {
-        override fun onBingImageSelected(bingImage: BingImage) {
-            // Do nothing as default
-        }
+    interface OnBingImageSelectedListener {
+        fun onBingImageSelected(bingImage: BingImage)
     }
 
-    class BingImageViewHolder(private val galleryLayout: View): RecyclerView.ViewHolder(galleryLayout) {
-        val imageView : ImageView = galleryLayout
+    interface OnBingImageLongClickListener {
+        fun onBingImageLongClickListener(view: View, bingImage: BingImage)
+    }
+
+    var bingImages: List<BingImage> = listOf()
+    lateinit var bingImageSelectedListener: OnBingImageSelectedListener
+    lateinit var bingImageLongClickListener: OnBingImageLongClickListener
+
+    class BingImageViewHolder(private val galleryLayout: View) :
+        RecyclerView.ViewHolder(galleryLayout) {
+        val imageView: ImageView = galleryLayout
             .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_image)
-        val dateText : MaterialTextView = galleryLayout
+        val dateText: MaterialTextView = galleryLayout
             .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_date)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingImageViewHolder {
         val galleryLayout = LayoutInflater.from(parent.context)
-            .inflate(R.layout.activity_main_wallpaper_gallery_grid_item, parent, false) as LinearLayout
+            .inflate(R.layout.activity_main_gallery_grid_item, parent, false) as LinearLayout
         return BingImageViewHolder(galleryLayout)
     }
 
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {
         val bingImage = bingImages[position]
         holder.imageView.setImageURI(Uri.parse(bingImage.imageDeviceUri))
-        holder.imageView.setOnClickListener {
-            bingImageSelectedListener.onBingImageSelected(bingImage)
+
+        if (this::bingImageSelectedListener.isInitialized) {
+            holder.imageView.setOnClickListener {
+                bingImageSelectedListener.onBingImageSelected(bingImage)
+            }
         }
+
+        if (this::bingImageLongClickListener.isInitialized) {
+            holder.imageView.setOnLongClickListener { view ->
+                bingImageLongClickListener.onBingImageLongClickListener(view, bingImage)
+                true
+            }
+        }
+
         holder.dateText.text = bingImage.date.toString()
     }
 
     override fun getItemCount(): Int {
         return bingImages.size
     }
-
-    interface OnBingImageSelectedListener {
-        fun onBingImageSelected(bingImage: BingImage)
-    }
-
 }

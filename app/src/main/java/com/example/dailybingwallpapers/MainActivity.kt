@@ -6,10 +6,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.view.ContextMenu
+import android.view.MenuInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
@@ -27,7 +30,9 @@ import com.google.android.material.textview.MaterialTextView
 
 const val PERMISSION_REQUEST_READ_STORAGE = 0
 
-class MainActivity : AppCompatActivity(), BingImageAdapter.OnBingImageSelectedListener {
+class MainActivity : AppCompatActivity(),
+    BingImageAdapter.OnBingImageSelectedListener,
+    BingImageAdapter.OnBingImageLongClickListener {
     private lateinit var layout: View
 
     private lateinit var mainViewModel: MainViewModel
@@ -44,6 +49,16 @@ class MainActivity : AppCompatActivity(), BingImageAdapter.OnBingImageSelectedLi
         requestStoragePermission()
     }
 
+    override fun onCreateContextMenu(
+        menu: ContextMenu?,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
+        super.onCreateContextMenu(menu, v, menuInfo)
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.activity_main_gallery_item_menu, menu)
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -57,7 +72,6 @@ class MainActivity : AppCompatActivity(), BingImageAdapter.OnBingImageSelectedLi
         }
     }
 
-
     override fun onBingImageSelected(bingImage: BingImage) {
         val sharedPrefs = getSharedPreferences(
             getString(R.string.shared_prefs_app_globals_file_key),
@@ -65,6 +79,29 @@ class MainActivity : AppCompatActivity(), BingImageAdapter.OnBingImageSelectedLi
         )
         //TODO: Check current wallpaper and set marker for recycler
         mainViewModel.onPreviewWallpaperSelected(bingImage)
+    }
+
+    override fun onBingImageLongClickListener(view: View, bingImage: BingImage) {
+        val pMenu = PopupMenu(this, view)
+        pMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.activity_main_wallpapers_gallery_grid_item_menu_set_as -> {
+                    val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
+                        addCategory(Intent.CATEGORY_DEFAULT)
+                        setDataAndType(Uri.parse(bingImage.imageDeviceUri), "image/*")
+                        putExtra("mimeType", "image/*")
+                    }
+                    startActivity(Intent.createChooser(intent, "Set as"))
+
+                    true
+                }
+                else -> false
+            }
+
+        }
+        val inflater = pMenu.menuInflater
+        inflater.inflate(R.menu.activity_main_gallery_item_menu, pMenu.menu)
+        pMenu.show()
     }
 
     private fun requestStoragePermission() {
@@ -132,6 +169,7 @@ class MainActivity : AppCompatActivity(), BingImageAdapter.OnBingImageSelectedLi
         val previewDetailsCopyrightLinkText: MaterialTextView = findViewById(R.id.activity_main_details_copyright_link)
 
         wallpaperGalleryGridAdapter.bingImageSelectedListener = this
+        wallpaperGalleryGridAdapter.bingImageLongClickListener = this
         wallpaperGalleryGridRecyclerView.layoutManager = wallpaperGalleryGridLayoutManager
         wallpaperGalleryGridRecyclerView.adapter = wallpaperGalleryGridAdapter
 
@@ -156,5 +194,4 @@ class MainActivity : AppCompatActivity(), BingImageAdapter.OnBingImageSelectedLi
         // Run an image scrap with the import service
         startForegroundService(Intent(this, BingImageImportService::class.java))
     }
-
 }

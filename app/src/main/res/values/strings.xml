@@ -25,13 +25,15 @@
     <string name="activity_main_wallpaper_copyright_label">Copyright:</string>
     <string name="activity_main_wallpaper_copyright_link_label">Copyright Link:</string>
     <string name="activity_main_preview_wallpaper_image_storage_denied_text">
-        Preview requires storage access.<br/>
+        Preview requires storage access.<br />
         To allow app permissions follow: Settings > Apps &amp; notifications > See all apps > Daily Bing Wallpapers > Permissions
     </string>
     <string name="activity_main_preview_wallpapers_gallery_storage_denied_text">
-        Discovery requires storage access.<br/>
+        Discovery requires storage access.<br />
         To allow app permissions follow: Settings > Apps &amp; notifications > See all apps > Daily Bing Wallpapers > Permissions
     </string>
 
-    <string name="import_service_notification_title">Downloading Bing images...</string>
+    <string name="import_service_notification_title">Downloading Bing images</string>
+
+    <string name="activity_main_gallery_item_menu_set_as">Set as</string>
 </resources>
