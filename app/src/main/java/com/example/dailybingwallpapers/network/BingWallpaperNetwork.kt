@@ -1,5 +1,6 @@
 package com.example.dailybingwallpapers.network
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
@@ -11,12 +12,13 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import com.example.dailybingwallpapers.R
+import com.example.dailybingwallpapers.app.parsers.BingImageXmlParser
+import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
 import com.example.dailybingwallpapers.network.dto.BingImageMetaDataDTO
-import com.example.dailybingwallpapers.storage.database.entities.BingImage
-import com.example.dailybingwallpapers.parsers.BingImageXmlParser
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.File
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.net.HttpURLConnection
@@ -24,7 +26,6 @@ import java.net.URL
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
-import java.util.Objects.isNull
 
 // TODO: Add support for mkt parameter
 // TODO: Readjust for Bing Image APIs idx threshold case (after idx=8 all entries start from idx=8)
@@ -131,7 +132,7 @@ class BingWallpaperNetwork {
             val imageMetaData = bingImageXmlParser.parse(xml)
 
             for (data in imageMetaData) {
-                if (skips-- > 0) continue;
+                if (skips-- > 0) continue
 
                 // Import image from url to device for caching
                 val imageName = getUniqueBingImageName(data)
@@ -176,13 +177,16 @@ class BingWallpaperNetwork {
 
         // Stream in image data to external storage
         val resolver = context.contentResolver
-        val imageContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
         val cursor = getImageEntry(resolver, imageName)
-        var uri: Uri? = null
 
-        if (cursor.count == 0) {
-            uri = resolver.insert(imageContentUri, imageDetails)!!
+        if (cursor.count != 0 && cursor.moveToFirst()) { // Image already exists
+            val id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID))
+            cursor.close()
+            return Uri.withAppendedPath(externalContentUri, id.toString()).toString()
+        } else { // Insert new entry if doesn't exist
+            val uri = resolver.insert(externalContentUri, imageDetails)!!
             resolver.openOutputStream(uri, "w")!!.use { os ->
                 // Fetch bitmap to save
                 val bm = fetchImageFromUrl(imageUrl)
@@ -195,11 +199,8 @@ class BingWallpaperNetwork {
                 imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
                 resolver.update(uri, imageDetails, null, null)
             }
+            return uri.toString()
         }
-
-        cursor.close()
-
-        return if (isNull(uri)) "" else uri.toString()
     }
 
     private fun getUniqueBingImageName(bingImageMetaDataDTO: BingImageMetaDataDTO): String {
@@ -221,11 +222,12 @@ class BingWallpaperNetwork {
         return BitmapFactory.decodeStream(bis)
     }
 
+    @SuppressLint("Recycle") // Closing responsiblility for caller
     private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String): Cursor {
         val projection = mutableListOf(
-            MediaStore.Images.ImageColumns.DISPLAY_NAME
+            MediaStore.Images.ImageColumns.DISPLAY_NAME,
+            MediaStore.Images.Media._ID
         )
-
         val selectionClause = MediaStore.Files.FileColumns.DISPLAY_NAME + " = ?"
         val selectionArgs = mutableListOf<String>(imageDisplayName)
 

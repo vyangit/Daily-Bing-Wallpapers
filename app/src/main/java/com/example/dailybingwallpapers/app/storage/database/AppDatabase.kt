@@ -1,11 +1,11 @@
-package com.example.dailybingwallpapers.storage.database
+package com.example.dailybingwallpapers.app.storage.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.dailybingwallpapers.storage.database.dao.BingImageDao
-import com.example.dailybingwallpapers.storage.database.entities.BingImage
+import com.example.dailybingwallpapers.app.storage.database.dao.BingImageDao
+import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
 
 @Database(entities = [BingImage::class], version = 1, exportSchema = false)
 abstract class AppDatabase: RoomDatabase() {
@@ -16,7 +16,7 @@ abstract class AppDatabase: RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             synchronized(AppDatabase::class) {
-                if (!::INSTANCE.isInitialized) {
+                if (!Companion::INSTANCE.isInitialized) {
                     INSTANCE = Room
                         .databaseBuilder(
                             context.applicationContext,

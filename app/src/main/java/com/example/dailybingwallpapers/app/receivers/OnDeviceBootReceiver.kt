@@ -1,11 +1,11 @@
-package com.example.dailybingwallpapers.receivers
+package com.example.dailybingwallpapers.app.receivers
 
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.example.dailybingwallpapers.services.BingImageImportService
+import com.example.dailybingwallpapers.app.services.BingImageImportService
 import java.time.LocalTime
 
 class OnDeviceBootReceiver: BroadcastReceiver() {

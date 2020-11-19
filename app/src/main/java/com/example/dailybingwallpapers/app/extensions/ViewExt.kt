@@ -1,8 +1,6 @@
-package com.example.dailybingwallpapers.utils.extensions
+package com.example.dailybingwallpapers.app.extensions
 
-import android.provider.Settings.Global.getString
 import android.view.View
-import com.example.dailybingwallpapers.R
 import com.google.android.material.snackbar.Snackbar
 
 fun View.showSnackbar(

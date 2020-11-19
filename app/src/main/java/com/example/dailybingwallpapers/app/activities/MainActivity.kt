@@ -1,32 +1,39 @@
-package com.example.dailybingwallpapers
+package com.example.dailybingwallpapers.app.activities
 
 import android.Manifest
-import android.content.Context
-import android.content.Intent
+import android.app.WallpaperManager
+import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.IBinder
 import android.view.ContextMenu
 import android.view.MenuInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.RelativeLayout
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.dailybingwallpapers.adapters.BingImageAdapter
+import com.example.dailybingwallpapers.R
+import com.example.dailybingwallpapers.app.adapters.BingImageAdapter
+import com.example.dailybingwallpapers.app.extensions.showSnackbar
+import com.example.dailybingwallpapers.app.services.BingImageImportService
+import com.example.dailybingwallpapers.app.storage.database.AppDatabase
+import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
+import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
+import com.example.dailybingwallpapers.app.view_models.MainViewModel
 import com.example.dailybingwallpapers.network.BingWallpaperNetwork
-import com.example.dailybingwallpapers.services.BingImageImportService
-import com.example.dailybingwallpapers.storage.database.AppDatabase
-import com.example.dailybingwallpapers.storage.database.entities.BingImage
-import com.example.dailybingwallpapers.storage.database.repos.BingImageRepository
-import com.example.dailybingwallpapers.utils.extensions.showSnackbar
-import com.example.dailybingwallpapers.view_models.MainViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 const val PERMISSION_REQUEST_READ_STORAGE = 0
 
@@ -35,9 +42,26 @@ class MainActivity : AppCompatActivity(),
     BingImageAdapter.OnBingImageLongClickListener,
     BingImageAdapter.OnDailyItemSelectedListener,
     BingImageAdapter.OnDailyItemLongClickListener {
-    private lateinit var layout: View
 
+    private lateinit var sharedPrefs: SharedPreferences
+    private lateinit var wallpaperManager: WallpaperManager
     private lateinit var mainViewModel: MainViewModel
+    private lateinit var bingImageImportService: BingImageImportService
+    private var mBound: Boolean = false
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            val binder = service as BingImageImportService.BingImageImportBinder
+            bingImageImportService = binder.getService()
+            mBound = true
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            mBound = false
+        }
+    }
+
+    private lateinit var layout: View
     private lateinit var wallpaperGalleryGridRecyclerView: RecyclerView
     private lateinit var wallpaperGalleryGridAdapter: BingImageAdapter
     private lateinit var wallpaperGalleryGridLayoutManager: RecyclerView.LayoutManager
@@ -47,8 +71,26 @@ class MainActivity : AppCompatActivity(),
         setContentView(R.layout.activity_main)
 
         layout = findViewById(R.id.activity_main)
+        sharedPrefs = getSharedPreferences(
+            getString(R.string.shared_prefs_app_globals_file_key),
+            Context.MODE_PRIVATE
+        )
+        wallpaperManager = WallpaperManager.getInstance(this)
 
-        requestStoragePermission()
+        requestStoragePermission {
+            initExternalStorageViews()
+
+            // Bind to image import service
+            Intent(this, BingImageImportService::class.java).also { intent ->
+                bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        updatePrefsIfWallpaperChanged()
     }
 
     override fun onCreateContextMenu(
@@ -58,7 +100,7 @@ class MainActivity : AppCompatActivity(),
     ) {
         super.onCreateContextMenu(menu, v, menuInfo)
         val inflater: MenuInflater = menuInflater
-        inflater.inflate(R.menu.activity_main_gallery_item_menu, menu)
+        inflater.inflate(R.menu.menu_activity_main_gallery_item, menu)
     }
 
     override fun onRequestPermissionsResult(
@@ -75,10 +117,6 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onBingImageSelected(bingImage: BingImage) {
-        val sharedPrefs = getSharedPreferences(
-            getString(R.string.shared_prefs_app_globals_file_key),
-            Context.MODE_PRIVATE
-        )
         //TODO: Check current wallpaper and set marker for recycler
         mainViewModel.onPreviewWallpaperSelected(bingImage)
     }
@@ -87,22 +125,22 @@ class MainActivity : AppCompatActivity(),
         val pMenu = PopupMenu(this, view)
         pMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.activity_main_wallpapers_gallery_grid_item_menu_set_as -> {
+                R.id.activity_main_wallpapers_gallery_item_menu_set_as -> {
                     val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
                         addCategory(Intent.CATEGORY_DEFAULT)
                         setDataAndType(Uri.parse(bingImage.imageDeviceUri), "image/*")
                         putExtra("mimeType", "image/*")
                     }
+
                     startActivity(Intent.createChooser(intent, "Set as"))
 
                     true
                 }
                 else -> false
             }
-
         }
         val inflater = pMenu.menuInflater
-        inflater.inflate(R.menu.activity_main_gallery_item_menu, pMenu.menu)
+        inflater.inflate(R.menu.menu_activity_main_gallery_item, pMenu.menu)
         pMenu.show()
     }
 
@@ -111,24 +149,59 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onDailyItemLongClick(view: View) {
-        TODO("Not yet implemented")
+        val pMenu = PopupMenu(this, view)
+        pMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.activity_main_wallpapers_gallery_daily_item_menu_set_wallpaper -> {
+                    val dialogBuilder = AlertDialog.Builder(this).apply {
+                        setTitle(R.string.activity_main_preview_wallpapers_gallery_daily_item_dialog_title)
+                        setMessage(R.string.activity_main_preview_wallpapers_gallery_daily_item_dialog_message)
+                        setPositiveButton(R.string.activity_main_preview_wallpapers_gallery_daily_item_dialog_positive_button) { _, _ ->
+                            sharedPrefs.edit {
+                                putBoolean(
+                                    getString(R.string.shared_prefs_app_globals_daily_mode_on),
+                                    true
+                                )
+                            }
+                            if (mBound) {
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    bingImageImportService.refreshDailyWallpaper()
+                                }
+                            }
+                        }
+                        setNegativeButton(R.string.activity_main_preview_wallpapers_gallery_daily_item_dialog_negative_button) { _, _ ->
+                            // Do nothing, op cancelled
+                        }
+                    }
+
+                    dialogBuilder.show()
+                    true
+                }
+                else -> false
+            }
+        }
+        val inflater = pMenu.menuInflater
+        inflater.inflate(R.menu.menu_activity_main_gallery_daily_item, pMenu.menu)
+        pMenu.show()
     }
 
-    private fun requestStoragePermission() {
+    private fun requestStoragePermission(
+        successAction: () -> Unit
+    ) {
         when {
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED -> {
-                // You can use the API that requires the permission.
-                initExternalStorageViews()
+                successAction()
             }
             shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
             -> {
                 layout.showSnackbar(
                     R.string.storage_permission_required,
                     Snackbar.LENGTH_INDEFINITE,
-                    R.string.ok) {
+                    R.string.ok
+                ) {
                     requestPermissions(
                         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
                         PERMISSION_REQUEST_READ_STORAGE
@@ -217,11 +290,35 @@ class MainActivity : AppCompatActivity(),
             list?.let {
                 wallpaperGalleryGridAdapter.bingImages = list
                 wallpaperGalleryGridAdapter.notifyDataSetChanged()
-                mainViewModel.onPreviewWallpaperSelected(list[0])
+                if (list.isNotEmpty()) mainViewModel.onPreviewWallpaperSelected(list[0])
             }
         }
 
         // Run an image scrap with the import service
         startForegroundService(Intent(this, BingImageImportService::class.java))
+    }
+
+    private fun updatePrefsIfWallpaperChanged(): Boolean {
+        val recordedWallpaperId = sharedPrefs.getInt(
+            getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+            -1
+        )
+        val currWallpaperId = wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+        if (currWallpaperId != recordedWallpaperId) {
+            sharedPrefs.edit {
+                putInt(
+                    getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+                    currWallpaperId
+                )
+                putBoolean(
+                    getString(R.string.shared_prefs_app_globals_daily_mode_on),
+                    false
+                )
+            }
+
+            return true
+        }
+
+        return false
     }
 }

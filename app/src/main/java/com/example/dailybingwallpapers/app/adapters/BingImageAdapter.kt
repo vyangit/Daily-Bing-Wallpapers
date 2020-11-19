@@ -1,4 +1,4 @@
-package com.example.dailybingwallpapers.adapters
+package com.example.dailybingwallpapers.app.adapters
 
 import android.net.Uri
 import android.view.LayoutInflater
@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
-import com.example.dailybingwallpapers.storage.database.entities.BingImage
+import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
 import com.google.android.material.textview.MaterialTextView
 
 class BingImageAdapter :
@@ -37,7 +37,7 @@ class BingImageAdapter :
     lateinit var dailyItemSelectedListener: OnDailyItemSelectedListener
     lateinit var dailyItemLongClickListener: OnDailyItemLongClickListener
 
-    class BingImageViewHolder(private val galleryLayout: View) :
+    class BingImageViewHolder(galleryLayout: View) :
         RecyclerView.ViewHolder(galleryLayout) {
         val imageView: ImageView = galleryLayout
             .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_image)

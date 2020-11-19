@@ -16,7 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DailyBingWallpapers">
-        <activity android:name=".MainActivity">
+        <activity android:name=".app.activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -25,7 +25,7 @@
         </activity>
 
         <receiver
-            android:name=".receivers.OnDeviceBootReceiver"
+            android:name=".app.receivers.OnDeviceBootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -34,7 +34,7 @@
         </receiver>
 
         <service
-            android:name=".services.BingImageImportService"
+            android:name=".app.services.BingImageImportService"
             android:enabled="true"
             android:exported="false">
         </service>

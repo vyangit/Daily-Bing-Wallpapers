@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".MainActivity"
+    tools:context=".app.activities.MainActivity"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -22,9 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/preview"
-            android:textStyle="bold"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"/>
+            android:textStyle="bold" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/activity_main_preview_wallpaper_image_storage_denied"
@@ -108,19 +106,19 @@
                     style="@style/TextAppearance.MaterialComponents.Caption"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/activity_main_wallpaper_date_shown_label" />
+                    android:text="@string/activity_main_preview_date_label" />
 
                 <com.google.android.material.textview.MaterialTextView
                     style="@style/TextAppearance.MaterialComponents.Caption"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/activity_main_wallpaper_copyright_label" />
+                    android:text="@string/activity_main_preview_copyright_label" />
 
                 <com.google.android.material.textview.MaterialTextView
                     style="@style/TextAppearance.MaterialComponents.Caption"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/activity_main_wallpaper_copyright_link_label" />
+                    android:text="@string/activity_main_preview_copyright_link_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -173,7 +171,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/spacing"
-            android:text="@string/activity_main_wallpapers_gallery_header"
+            android:text="@string/activity_main_gallery_header"
             android:textStyle="bold" />
 
         <androidx.recyclerview.widget.RecyclerView

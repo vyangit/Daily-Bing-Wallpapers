@@ -4,6 +4,9 @@
 
     <string name="ok">OK</string>
     <string name="na">N/A</string>
+    <string name="preview">Preview</string>
+    <string name="today">Today</string>
+    <string name="daily">Daily</string>
 
     <string name="storage_permission_required">Storage access is required to display the imported Bing images.</string>
     <string name="storage_permission_not_available">Storage is not available. Requesting storage permission.</string>
@@ -13,18 +16,14 @@
 
     <string name="shared_prefs_app_globals_file_key">GLOBAL</string>
     <string name="shared_prefs_app_globals_last_update_time">GLOBAL_LAST_UPDATE_TIME</string>
+    <string name="shared_prefs_app_globals_daily_mode_on">GLOBAL_DAILY_MODE</string>
+    <string name="shared_prefs_app_globals_recorded_wallpaper_id">GLOBAL_RECORDED_WALLPAPER_ID</string>
 
     <string name="shared_prefs_app_settings_file_key">SETTINGS</string>
 
-    <string name="today">Today</string>
-    <string name="daily">Daily</string>
-
-    <string name="preview">Preview</string>
-    <string name="activity_main_wallpapers_gallery_header">Discover</string>
-
-    <string name="activity_main_wallpaper_date_shown_label">Date:</string>
-    <string name="activity_main_wallpaper_copyright_label">Copyright:</string>
-    <string name="activity_main_wallpaper_copyright_link_label">Copyright Link:</string>
+    <string name="activity_main_preview_date_label">Date:</string>
+    <string name="activity_main_preview_copyright_label">Copyright:</string>
+    <string name="activity_main_preview_copyright_link_label">Copyright Link:</string>
     <string name="activity_main_preview_wallpaper_image_storage_denied_text">
         Preview requires storage access.<br />
         To allow app permissions follow: Settings > Apps &amp; notifications > See all apps > Daily Bing Wallpapers > Permissions
@@ -37,7 +36,19 @@
     <string name="activity_main_preview_wallpapers_gallery_daily_item_headline">Enjoy an inspiring Bing image a day</string>
     <string name="activity_main_preview_wallpapers_gallery_daily_item_date">Daily</string>
 
+    <string name="activity_main_preview_wallpapers_gallery_daily_item_dialog_title">Daily Wallpaper</string>
+    <string name="activity_main_preview_wallpapers_gallery_daily_item_dialog_positive_button">OK</string>
+    <string name="activity_main_preview_wallpapers_gallery_daily_item_dialog_negative_button">CANCEL</string>
+    <string name="activity_main_preview_wallpapers_gallery_daily_item_dialog_message">
+        A new Bing image will be set as your wallpaper every day
+    </string>
+
+    <string name="activity_main_gallery_header">Discover</string>
+
+    <string name="menu_activity_main_gallery_item_set_as">Set as</string>
+
+    <string name="menu_activity_main_gallery_daily_item_set_wallpaper">Set daily</string>
+
     <string name="import_service_notification_title">Downloading Bing images</string>
 
-    <string name="activity_main_gallery_item_menu_set_as">Set as</string>
 </resources>

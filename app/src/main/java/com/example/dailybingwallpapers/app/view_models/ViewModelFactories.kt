@@ -1,4 +1,4 @@
-package com.example.dailybingwallpapers.view_models
+package com.example.dailybingwallpapers.app.view_models
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

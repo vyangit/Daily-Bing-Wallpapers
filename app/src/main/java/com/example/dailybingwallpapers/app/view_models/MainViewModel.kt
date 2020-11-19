@@ -1,12 +1,12 @@
-package com.example.dailybingwallpapers.view_models
+package com.example.dailybingwallpapers.app.view_models
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.dailybingwallpapers.storage.database.entities.BingImage
-import com.example.dailybingwallpapers.storage.database.repos.BingImageRepository
+import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
+import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
 
-class MainViewModel(private val repo: BingImageRepository): ViewModel() {
+class MainViewModel(repo: BingImageRepository) : ViewModel() {
     companion object {
         val FACTORY = singleArgViewModelFactory(::MainViewModel)
     }

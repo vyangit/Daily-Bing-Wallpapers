@@ -1,8 +1,6 @@
-package com.example.dailybingwallpapers.parsers
+package com.example.dailybingwallpapers.app.parsers
 
-import android.media.Image
 import android.util.Xml
-import com.example.dailybingwallpapers.storage.database.entities.BingImage
 import com.example.dailybingwallpapers.network.dto.BingImageMetaDataDTO
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
@@ -18,14 +16,13 @@ private const val bingImageBaseUrlFormat = "https://www.bing.com%s_1920x1080.jpg
 class BingImageXmlParser {
 
     @Throws(XmlPullParserException::class, IOException::class)
-    fun parse(xml: InputStream): List<BingImageMetaDataDTO> {
-        xml.use { xml ->
+    fun parse(xmlStream: InputStream): List<BingImageMetaDataDTO> {
+        xmlStream.use { xml ->
             val parser: XmlPullParser = Xml.newPullParser()
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
             parser.setInput(xml, null)
             parser.nextTag()
             return readImages(parser)
-
         }
     }
 
