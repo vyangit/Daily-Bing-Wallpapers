@@ -25,11 +25,12 @@
         </activity>
 
         <receiver
-            android:name=".app.receivers.OnDeviceBootReceiver"
+            android:name=".app.receivers.BootImportServiceReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="com.example.dailybingwallpapers.APP_REFRESH_BACKGROUND" />
             </intent-filter>
         </receiver>
 

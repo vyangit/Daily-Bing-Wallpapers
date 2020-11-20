@@ -4,7 +4,6 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import androidx.core.content.edit
@@ -22,15 +21,9 @@ const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
 const val NOTIFICATION_ID_FOREGROUND_SERVICE = 1
 
 class BingImageImportService: Service() {
-    private val binder = BingImageImportBinder()
-
     private lateinit var database: AppDatabase
     private lateinit var network: BingWallpaperNetwork
     private lateinit var repo: BingImageRepository
-
-    inner class BingImageImportBinder : Binder() {
-        fun getService(): BingImageImportService = this@BingImageImportService
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -51,7 +44,7 @@ class BingImageImportService: Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        return binder
+        throw UnsupportedOperationException("BingImageImportService doesn't support binding")
     }
 
     private fun marshallNotificationChannel() {
@@ -102,7 +95,7 @@ class BingImageImportService: Service() {
         }
     }
 
-    suspend fun refreshDailyWallpaper() {
+    private suspend fun refreshDailyWallpaper() {
         val sharedPrefs = getSharedPreferences(
             getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
