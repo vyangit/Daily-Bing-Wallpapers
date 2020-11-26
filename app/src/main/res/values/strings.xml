@@ -50,5 +50,6 @@
     <string name="menu_activity_main_gallery_daily_item_set_wallpaper">Set daily</string>
 
     <string name="import_service_notification_title">Downloading Bing images</string>
+    <string name="validator_service_notification_title">Checking if Bing image files exist</string>
 
 </resources>

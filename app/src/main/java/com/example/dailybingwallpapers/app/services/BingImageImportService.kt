@@ -1,13 +1,17 @@
 package com.example.dailybingwallpapers.app.services
 
 import android.app.*
+import android.app.WallpaperManager.FLAG_SYSTEM
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.content.edit
 import com.example.dailybingwallpapers.R
+import com.example.dailybingwallpapers.app.services.interfaces.ForegroundService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
 import com.example.dailybingwallpapers.network.BingWallpaperNetwork
@@ -15,12 +19,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.Integer.max
+import java.lang.Integer.min
 
-const val UPDATES_CHANNEL_ID = "UPDATES"
 const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
-const val NOTIFICATION_ID_FOREGROUND_SERVICE = 1
 
-class BingImageImportService: Service() {
+class BingImageImportService : Service(), ForegroundService {
     private lateinit var database: AppDatabase
     private lateinit var network: BingWallpaperNetwork
     private lateinit var repo: BingImageRepository
@@ -47,38 +51,41 @@ class BingImageImportService: Service() {
         throw UnsupportedOperationException("BingImageImportService doesn't support binding")
     }
 
-    private fun marshallNotificationChannel() {
-        val nManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
+    override fun marshallNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             val nChannel =
-                NotificationChannel(UPDATES_CHANNEL_ID, "Updates", UPDATES_CHANNEL_IMPORTANCE)
+                NotificationChannel(
+                    ForegroundService.NOTIFICATION_CHANNEL_ID_UPDATES,
+                    "Updates",
+                    ForegroundService.UPDATES_CHANNEL_IMPORTANCE
+                )
             nChannel.description = "Facilitates app data update notifications"
             nManager.createNotificationChannel(nChannel)
         }
     }
 
-    private fun buildNotification(): Notification {
+    override fun buildNotification(): Notification {
         val pendingIntent =
-            Intent(this, BingImageImportService::class.java).let { importIntent ->
+            Intent(this, BingImageFileCheckerService::class.java).let { importIntent ->
                 PendingIntent.getService(this, 0, importIntent, 0)
             }
 
         return Notification.Builder(
             this,
-            UPDATES_CHANNEL_ID
+            ForegroundService.NOTIFICATION_CHANNEL_ID_UPDATES
         )
             .setContentTitle(getText(R.string.import_service_notification_title))
             .setContentIntent(pendingIntent)
             .build()
     }
 
-    private fun promoteToForeground() {
+    override fun promoteToForeground() {
         // Build the foreground notification
         val foregroundNotice = buildNotification()
 
         // Declare and start service as foreground
-        startForeground(NOTIFICATION_ID_FOREGROUND_SERVICE, foregroundNotice)
+        startForeground(ForegroundService.NOTIFICATION_ID_IMPORTER, foregroundNotice)
     }
 
     private fun checkAndFetchMissingBingImages() {
@@ -86,7 +93,7 @@ class BingImageImportService: Service() {
 
         // Fetch the data and close the service after
         scope.launch {
-            repo.importMissingBingImages()
+            repo.createMissingBingImages()
         }.invokeOnCompletion {
             scope.launch {
                 withContext(Dispatchers.IO) { refreshDailyWallpaper() }
@@ -117,7 +124,18 @@ class BingImageImportService: Service() {
                     if (wpManager.isSetWallpaperAllowed) {
                         val uri = Uri.parse(image.imageDeviceUri)
                         contentResolver.openInputStream(uri)!!.use { inputStream ->
-                            wpManager.setStream(inputStream)
+
+                            val bingWallpaper = BitmapFactory.decodeStream(inputStream)
+                            val minSize = min(bingWallpaper.height, bingWallpaper.width)
+                            val leftDelta = (bingWallpaper.width / 2) - (minSize / 2)
+                            val topDelta = (bingWallpaper.height / 2) - (minSize / 2)
+                            val rect = Rect(
+                                max(0, leftDelta),
+                                max(0, topDelta),
+                                min(leftDelta + minSize, minSize),
+                                min(topDelta + minSize, minSize)
+                            )
+                            wpManager.setStream(inputStream, rect, true, FLAG_SYSTEM)
                         }
                     }
                 }

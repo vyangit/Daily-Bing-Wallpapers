@@ -71,6 +71,7 @@ class BingImageAdapter :
             }
         } else {
             val bingImage = bingImages[position - 1]
+
             holder.imageView.setImageURI(Uri.parse(bingImage.imageDeviceUri))
             holder.imageView.scaleType = ImageView.ScaleType.CENTER_CROP
 

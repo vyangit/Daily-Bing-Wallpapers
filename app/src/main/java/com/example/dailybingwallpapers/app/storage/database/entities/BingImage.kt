@@ -6,22 +6,33 @@ import androidx.room.TypeConverters
 import com.example.dailybingwallpapers.app.storage.database.type_converters.BingImageTypeConverter
 import java.time.LocalDate
 
-@Entity(tableName = "bing_image", primaryKeys= ["date", "image_url"])
+@Entity(tableName = "bing_image", primaryKeys = ["date", "image_url"])
 @TypeConverters(BingImageTypeConverter::class)
-data class BingImage (
-        @ColumnInfo(name="date")
+data class BingImage(
+        @ColumnInfo(name = "date")
         val date: LocalDate,
 
-        @ColumnInfo(name="image_url")
+        @ColumnInfo(name = "image_url")
         val imageUrl: String,
 
-        @ColumnInfo(name="image_device_uri")
+        @ColumnInfo(name = "image_device_uri")
         val imageDeviceUri: String,
 
         val copyright: String,
 
-        @ColumnInfo(name="copyright_link")
+        @ColumnInfo(name = "copyright_link")
         val copyrightLink: String,
 
         val headline: String
+)
+
+data class BingImageCompositeKeyWithUri(
+        @ColumnInfo(name = "date")
+        val date: LocalDate,
+
+        @ColumnInfo(name = "image_url")
+        val imageUrl: String,
+
+        @ColumnInfo(name = "image_device_uri")
+        val imageDeviceUri: String,
 )

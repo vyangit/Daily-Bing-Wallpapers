@@ -51,19 +51,32 @@ class BingWallpaperNetwork {
         }
     }
 
+    suspend fun getOnlineWallpaperByUrl(url: String): Bitmap? {
+        return fetchImageFromUrl(url)
+    }
+
+    suspend fun getOnlineWallpaperByDate(context: Context, date: LocalDate): Bitmap? {
+        //TODO
+        return null
+    }
+
     suspend fun getAllOnlineWallpapersSinceLastUpdate(context: Context): List<BingImage> {
         val sharedPrefs = context.getSharedPreferences(
             context.getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
-            )
-        val lastUpdateTime = sharedPrefs.getString(context.getString(R.string.shared_prefs_app_globals_last_update_time), "")
+        )
+        val lastUpdateTime = sharedPrefs.getString(
+            context.getString(R.string.shared_prefs_app_globals_last_update_time),
+            ""
+        )
         if (lastUpdateTime.isNullOrBlank()) {
             return getAllOnlineWallpapers(context)
         } else {
             val period = Period.between(
                 LocalDate.parse(
                     lastUpdateTime,
-                    DateTimeFormatter.ISO_LOCAL_DATE),
+                    DateTimeFormatter.ISO_LOCAL_DATE
+                ),
                 LocalDate.now()
             )
 
@@ -190,7 +203,7 @@ class BingWallpaperNetwork {
             resolver.openOutputStream(uri, "w")!!.use { os ->
                 // Fetch bitmap to save
                 val bm = fetchImageFromUrl(imageUrl)
-                bm.compress(Bitmap.CompressFormat.JPEG, 100, os)
+                bm?.compress(Bitmap.CompressFormat.JPEG, 100, os)
             }
 
             // Update global access after import
@@ -211,21 +224,26 @@ class BingWallpaperNetwork {
             )
         }
 
-        val imageDateStamp = bingImageMetaDataDTO.date.toString().replace("-","")
+        val imageDateStamp = bingImageMetaDataDTO.date.toString().replace("-", "")
 
         return imageDateStamp + '_' + imageUrlPart
     }
 
-    private fun fetchImageFromUrl(imageUrl: String): Bitmap {
+    private fun fetchImageFromUrl(imageUrl: String): Bitmap? {
         val url = URL(imageUrl)
         val bis = BufferedInputStream(url.openStream())
         return BitmapFactory.decodeStream(bis)
     }
 
+    private fun isDateOutOfBoundOfMaxRange(date: LocalDate): Boolean {
+        val period = Period.between(date, LocalDate.now())
+
+        return period.years > 0 || period.months > 0 || period.days > IMAGES_ONLINE_MAX
+    }
+
     @SuppressLint("Recycle") // Closing responsiblility for caller
     private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String): Cursor {
         val projection = mutableListOf(
-            MediaStore.Images.ImageColumns.DISPLAY_NAME,
             MediaStore.Images.Media._ID
         )
         val selectionClause = MediaStore.Files.FileColumns.DISPLAY_NAME + " = ?"
