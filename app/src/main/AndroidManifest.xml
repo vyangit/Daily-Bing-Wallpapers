@@ -25,7 +25,7 @@
         </activity>
 
         <receiver
-            android:name=".app.receivers.BootImportServiceReceiver"
+            android:name=".app.receivers.ImportServiceReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

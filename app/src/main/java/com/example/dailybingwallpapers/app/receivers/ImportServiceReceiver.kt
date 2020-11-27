@@ -9,7 +9,7 @@ import androidx.core.content.ContextCompat.startForegroundService
 import com.example.dailybingwallpapers.app.services.BingImageImportService
 import java.time.LocalTime
 
-class BootImportServiceReceiver : BroadcastReceiver() {
+class ImportServiceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             scheduleServiceOnBoot(context)

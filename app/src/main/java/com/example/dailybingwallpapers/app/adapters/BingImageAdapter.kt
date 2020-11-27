@@ -30,7 +30,6 @@ class BingImageAdapter :
         fun onDailyItemLongClick(view: View)
     }
 
-
     var bingImages: List<BingImage> = listOf()
     lateinit var bingImageSelectedListener: OnBingImageSelectedListener
     lateinit var bingImageLongClickListener: OnBingImageLongClickListener

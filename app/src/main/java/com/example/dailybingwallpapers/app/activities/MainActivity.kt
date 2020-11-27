@@ -24,14 +24,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.adapters.BingImageAdapter
 import com.example.dailybingwallpapers.app.extensions.showSnackbar
-import com.example.dailybingwallpapers.app.receivers.BootImportServiceReceiver
-import com.example.dailybingwallpapers.app.receivers.BootImportServiceReceiver.Companion.ACTION_APP_REFRESH_BACKGROUND
+import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver
+import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver.Companion.ACTION_APP_REFRESH_BACKGROUND
 import com.example.dailybingwallpapers.app.services.BingImageImportService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
 import com.example.dailybingwallpapers.app.view_models.MainViewModel
-import com.example.dailybingwallpapers.network.BingWallpaperNetwork
+import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
 
@@ -63,14 +63,14 @@ class MainActivity : AppCompatActivity(),
         )
         wallpaperManager = WallpaperManager.getInstance(this)
 
-        requestStoragePermission {
-            initExternalStorageViews()
-        }
     }
 
     override fun onResume() {
         super.onResume()
 
+        requestStoragePermission {
+            initExternalStorageViews()
+        }
         updatePrefsIfWallpaperChanged()
     }
 
@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity(),
                             // Refresh wallpaper since daily mode is on now
                             val wallpaperRefreshIntent = Intent(
                                 applicationContext,
-                                BootImportServiceReceiver::class.java
+                                ImportServiceReceiver::class.java
                             ).apply {
                                 action = ACTION_APP_REFRESH_BACKGROUND
                             }
@@ -211,7 +211,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun initExternalStorageViews() {
         val database = AppDatabase.getDatabase(this)
-        val network = BingWallpaperNetwork.getService()
+        val network = BingImageApiNetwork.getService()
         val repo = BingImageRepository(this, network, database.bingImageDao)
         mainViewModel = ViewModelProvider(this, MainViewModel.FACTORY(repo)).get(MainViewModel::class.java)
 

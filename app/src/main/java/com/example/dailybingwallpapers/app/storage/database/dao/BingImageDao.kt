@@ -14,8 +14,8 @@ interface BingImageDao {
     @get:Query("select * from bing_image order by date desc limit 1")
     val mostRecentBingImage: BingImage?
 
-    @get:Query("select date, image_url, image_device_uri from bing_image")
-    val getAllCompositeKeysWithUri: List<BingImageCompositeKeyWithUri>
+    @Query("select date, image_url, image_device_uri from bing_image")
+    fun getAllCompositeKeysWithUri(): List<BingImageCompositeKeyWithUri>
 
     @Query("select * from bing_image where image_url = :image_url")
     fun getByUrl(image_url: String): BingImage?

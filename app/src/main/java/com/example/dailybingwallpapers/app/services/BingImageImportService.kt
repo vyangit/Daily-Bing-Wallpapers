@@ -14,11 +14,10 @@ import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.services.interfaces.ForegroundService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
-import com.example.dailybingwallpapers.network.BingWallpaperNetwork
+import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.lang.Integer.max
 import java.lang.Integer.min
 
@@ -26,14 +25,14 @@ const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
 
 class BingImageImportService : Service(), ForegroundService {
     private lateinit var database: AppDatabase
-    private lateinit var network: BingWallpaperNetwork
+    private lateinit var network: BingImageApiNetwork
     private lateinit var repo: BingImageRepository
 
     override fun onCreate() {
         super.onCreate()
 
         database = AppDatabase.getDatabase(this)
-        network = BingWallpaperNetwork.getService()
+        network = BingImageApiNetwork.getService()
         repo = BingImageRepository(this, network, database.bingImageDao)
 
         // Android 8 >= foreground promotion needed
@@ -42,8 +41,8 @@ class BingImageImportService : Service(), ForegroundService {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        checkAndFetchMissingBingImages()
-
+        // Run service and schedule stop
+        runService()
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -67,7 +66,7 @@ class BingImageImportService : Service(), ForegroundService {
 
     override fun buildNotification(): Notification {
         val pendingIntent =
-            Intent(this, BingImageFileCheckerService::class.java).let { importIntent ->
+            Intent(this, BingImageImportService::class.java).let { importIntent ->
                 PendingIntent.getService(this, 0, importIntent, 0)
             }
 
@@ -88,17 +87,25 @@ class BingImageImportService : Service(), ForegroundService {
         startForeground(ForegroundService.NOTIFICATION_ID_IMPORTER, foregroundNotice)
     }
 
-    private fun checkAndFetchMissingBingImages() {
-        val scope = CoroutineScope(Dispatchers.IO)
-
+    private fun runService() {
         // Fetch the data and close the service after
-        scope.launch {
-            repo.createMissingBingImages()
+        CoroutineScope(Dispatchers.IO).launch {
+            importLatestBingImages()
+            importMissingBingImages()
+            refreshDailyWallpaper()
         }.invokeOnCompletion {
-            scope.launch {
-                withContext(Dispatchers.IO) { refreshDailyWallpaper() }
-            }
             stopSelf()
+        }
+    }
+
+    private suspend fun importLatestBingImages() {
+        repo.createLatestBingImages()
+    }
+
+    private suspend fun importMissingBingImages() {
+        val keys = repo.getAllCompositeKeys()
+        for (key in keys) { // deletes or revalidates if image file is lost
+            repo.deleteByCompositeKeyIfInvalid(key)
         }
     }
 

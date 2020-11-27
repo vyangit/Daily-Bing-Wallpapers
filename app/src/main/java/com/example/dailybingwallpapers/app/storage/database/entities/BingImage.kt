@@ -26,6 +26,7 @@ data class BingImage(
         val headline: String
 )
 
+@TypeConverters(BingImageTypeConverter::class)
 data class BingImageCompositeKeyWithUri(
         @ColumnInfo(name = "date")
         val date: LocalDate,
