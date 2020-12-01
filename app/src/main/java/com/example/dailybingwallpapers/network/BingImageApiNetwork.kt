@@ -78,48 +78,72 @@ class BingImageApiNetwork {
         context: Context,
         imageUrl: String,
         imageName: String
+    ): String? {
+        val bm = fetchImageFromUrl(imageUrl) ?: return null
+        return importBitmapToDevice(context, bm, imageName)
+    }
+
+    private suspend fun importBitmapToDevice(
+        context: Context,
+        bitmap: Bitmap,
+        imageName: String
     ): String {
         // Set up file descriptors to save to device
         val appDir =
             Environment.DIRECTORY_PICTURES + File.separator + context.getString(R.string.app_name)
 
-        val imageDetails = ContentValues().apply {
-            put(MediaStore.Images.ImageColumns.DISPLAY_NAME, imageName)
-            put(MediaStore.Images.ImageColumns.TITLE, imageName)
-            put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/jpg")
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.ImageColumns.RELATIVE_PATH, appDir)
-                put(MediaStore.Images.ImageColumns.IS_PENDING, 1)
-            }
-        }
-
         // Stream in image data to external storage
         val resolver = context.contentResolver
-        val externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val externalContentUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Images.Media.getContentUri(
+                MediaStore.VOLUME_EXTERNAL_PRIMARY
+            )
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+
+        // Obtain valid device uri
+        lateinit var uri: Uri
 
         val cursor = getImageEntry(resolver, imageName)
 
         if (cursor.count != 0 && cursor.moveToFirst()) { // Image already exists
             val id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID))
             cursor.close()
-            return Uri.withAppendedPath(externalContentUri, id.toString()).toString()
+            uri = Uri.withAppendedPath(externalContentUri, id.toString())
         } else { // Insert new entry if doesn't exist
-            val uri = resolver.insert(externalContentUri, imageDetails)!!
-            resolver.openOutputStream(uri, "w")!!.use { os ->
-                // Fetch bitmap to save
-                val bm = fetchImageFromUrl(imageUrl)
-                bm?.compress(Bitmap.CompressFormat.JPEG, 100, os)
+
+            val imageDetails = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, imageName)
+                put(MediaStore.Images.Media.TITLE, imageName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpg")
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, appDir)
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
             }
 
-            // Update global access after import
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                imageDetails.clear()
-                imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
-                resolver.update(uri, imageDetails, null, null)
+            val imageDeviceUri = resolver.insert(externalContentUri, imageDetails)
+
+            imageDeviceUri?.let { tmpUri ->
+                resolver.openOutputStream(tmpUri, "w")!!.use { os ->
+                    // Save bitmap
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
+                }
+
+                // Update global access after import
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    imageDetails.clear()
+                    imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
+                    resolver.update(tmpUri, imageDetails, null, null)
+                }
             }
-            return uri.toString()
+
+            uri = imageDeviceUri ?: Uri.EMPTY
         }
+
+        return uri.toString()
     }
 
     /**
@@ -199,15 +223,15 @@ class BingImageApiNetwork {
 
     @SuppressLint("Recycle") // Closing responsiblility for caller
     private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String): Cursor {
-        val projection = mutableListOf(
+        val projection = arrayOf(
             MediaStore.Images.Media._ID
         )
-        val selectionClause = MediaStore.Files.FileColumns.DISPLAY_NAME + " = ?"
-        val selectionArgs = mutableListOf<String>(imageDisplayName)
+        val selectionClause = MediaStore.Images.Media.DISPLAY_NAME + " = ?"
+        val selectionArgs = mutableListOf(imageDisplayName)
 
         return resolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            projection.toTypedArray(),
+            projection,
             selectionClause,
             selectionArgs.toTypedArray(),
             ""

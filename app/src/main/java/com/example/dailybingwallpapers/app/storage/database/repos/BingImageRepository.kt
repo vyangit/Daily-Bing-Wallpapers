@@ -1,8 +1,8 @@
 package com.example.dailybingwallpapers.app.storage.database.repos
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.storage.database.dao.BingImageDao
@@ -53,14 +53,11 @@ class BingImageRepository(
         val bingImages = mutableListOf<BingImage>()
         for (data in bingImageMetaData) {
             val imageName = generateUniqueBingImageName(data)
-            val imageDeviceUri = network.importImageFromUrlToDevice(
+            network.importImageFromUrlToDevice(
                 context,
                 data.imageUrl,
                 imageName
-            )
-
-            // Create entity objects from dto information
-            if (imageDeviceUri.isNotBlank()) {
+            )?.let { imageDeviceUri ->
                 bingImages.add(
                     BingImage(
                         data.date,
@@ -76,6 +73,14 @@ class BingImageRepository(
 
         // Store in app database
         bingImageDao.insert(bingImages)
+
+        // Update last update time
+        sharedPrefs.edit {
+            putString(
+                context.getString(R.string.shared_prefs_app_globals_last_update_time),
+                LocalDate.now().toString()
+            )
+        }
     }
 
     /**
@@ -94,19 +99,29 @@ class BingImageRepository(
             return false
         } catch (e: FileNotFoundException) {
             // Try retrieving from url or date range
-            var bm = network.fetchImageByUrl(keyWithUri.imageUrl)
-            if (bm == null) {
+            var imageName = generateUniqueBingImageName(keyWithUri.imageUrl, keyWithUri.date)
+            var imageDeviceUri = network.importImageFromUrlToDevice(
+                context,
+                keyWithUri.imageUrl,
+                imageName
+            )
+
+            if (imageDeviceUri == null) {
                 val metaData = network.fetchImageMetaDataByDate(keyWithUri.date)
-                bm = network.fetchImageByUrl(metaData?.imageUrl)
-            }
-            if (bm == null) {
-                bingImageDao.deleteByCompositeKeyWithUri(keyWithUri)
-                return true
+                imageDeviceUri = metaData?.imageUrl?.let { url ->
+                    imageName = generateUniqueBingImageName(keyWithUri.imageUrl, keyWithUri.date)
+
+                    network.importImageFromUrlToDevice(
+                        context,
+                        url,
+                        imageName
+                    )
+                }
             }
 
-            // Re-copy file to device drive
-            resolver.openOutputStream(deviceUri, "w")!!.use { os ->
-                bm.compress(Bitmap.CompressFormat.JPEG, 100, os)
+            if (imageDeviceUri == null) {
+                bingImageDao.deleteByCompositeKeyWithUri(keyWithUri)
+                return true
             }
 
             // Image is valid after copying back the file
@@ -119,14 +134,18 @@ class BingImageRepository(
     }
 
     private fun generateUniqueBingImageName(bingImageMetaDataDTO: BingImageMetaDataDTO): String {
-        val imageUrlPart = bingImageMetaDataDTO.imageUrl.let { imageUrl ->
+        return generateUniqueBingImageName(bingImageMetaDataDTO.imageUrl, bingImageMetaDataDTO.date)
+    }
+
+    private fun generateUniqueBingImageName(imageUrl: String, date: LocalDate): String {
+        val imageUrlPart = imageUrl.let { imageUrl ->
             imageUrl.substring(
-                imageUrl.indexOf("id=") + 3,
+                imageUrl.indexOf("id=OHR.") + 7,
                 imageUrl.indexOf(".jpg") + 4
             )
         }
 
-        val imageDateStamp = bingImageMetaDataDTO.date.toString().replace("-", "")
+        val imageDateStamp = date.toString().replace("-", "")
         return imageDateStamp + '_' + imageUrlPart
     }
 }
