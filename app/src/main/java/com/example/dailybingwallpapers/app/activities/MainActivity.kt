@@ -70,6 +70,9 @@ class MainActivity : AppCompatActivity(),
 
         requestStoragePermission {
             initExternalStorageViews()
+
+            // Run an image scrap with the import service
+            startForegroundService(Intent(this, BingImageImportService::class.java))
         }
     }
 
@@ -279,8 +282,5 @@ class MainActivity : AppCompatActivity(),
                 if (list.isNotEmpty()) mainViewModel.onPreviewWallpaperSelected(list[0])
             }
         }
-
-        // Run an image scrap with the import service
-        startForegroundService(Intent(this, BingImageImportService::class.java))
     }
 }

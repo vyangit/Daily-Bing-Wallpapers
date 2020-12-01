@@ -18,7 +18,6 @@ import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.lang.Integer.min
 import java.time.LocalDate
 
@@ -91,8 +90,8 @@ class BingImageImportService : Service(), ForegroundService {
     private fun runService() {
         // Fetch the data and close the service after
         CoroutineScope(Dispatchers.IO).launch {
-            withContext(Dispatchers.IO) { importLatestBingImages() }
-            withContext(Dispatchers.IO) { importMissingBingImages() }
+            importLatestBingImages()
+            importMissingBingImages()
         }.invokeOnCompletion {
             refreshDailyWallpaper()
             stopSelf()
@@ -123,12 +122,23 @@ class BingImageImportService : Service(), ForegroundService {
             getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
             -1
         )
-        val wpManager = WallpaperManager.getInstance(applicationContext)
-        val currWallpaperId = wpManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+        val lastDailyUpdateDate = sharedPrefs.getString(
+            getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
+            ""
+        )
 
-        if (isDailyModeOn && currWallpaperId == recordedWallpaperId) { // No change from last daily wallpaper set
+        val wpManager = WallpaperManager.getInstance(applicationContext)
+
+        if (isDailyModeOn &&
+            wpManager.getWallpaperId(FLAG_SYSTEM) == recordedWallpaperId
+        ) { // No change from last daily wallpaper set
             database.bingImageDao.mostRecentBingImage?.let { image ->
-                if (image.date == LocalDate.now() && wpManager.isSetWallpaperAllowed) {
+
+                if (lastDailyUpdateDate != image.date.toString() &&
+                    image.date == LocalDate.now() &&
+                    wpManager.isSetWallpaperAllowed
+                ) {
+
                     val uri = Uri.parse(image.imageDeviceUri)
 
                     // Get wallpaper and crop as needed
@@ -146,16 +156,28 @@ class BingImageImportService : Service(), ForegroundService {
                         )
                         wpManager.setBitmap(bingWallpaper, rect, true, FLAG_SYSTEM)
                     }
+
+                    sharedPrefs.edit {
+                        putString(
+                            getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
+                            image.date.toString()
+                        )
+                    }
                 }
             }
         } else { // Daily mode has been disrupted and should be toggled off
             sharedPrefs.edit {
                 putBoolean(getString(R.string.shared_prefs_app_globals_daily_mode_on), false)
-                putInt(
-                    getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-                    currWallpaperId
-                )
+                remove(getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date))
             }
+        }
+
+        // Record the current wallpaper
+        sharedPrefs.edit {
+            putInt(
+                getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+                wpManager.getWallpaperId(FLAG_SYSTEM)
+            )
         }
     }
 }

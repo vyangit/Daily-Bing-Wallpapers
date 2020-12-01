@@ -95,7 +95,7 @@ class BingImageRepository(
         val resolver = context.contentResolver
         try {
             // Image is valid cause a file exists
-            resolver.openInputStream(deviceUri)
+            resolver.openInputStream(deviceUri)?.close()
             return false
         } catch (e: FileNotFoundException) {
             // Try retrieving from url or date range
