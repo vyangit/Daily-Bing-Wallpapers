@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -79,6 +78,12 @@ class BingImageApiNetwork {
         imageUrl: String,
         imageName: String
     ): String? {
+        // Check if image already exists
+        val resolver = context.contentResolver
+        val uri = getImageEntryUri(resolver, imageName)
+        if (uri.isNotBlank()) return uri
+
+        // Fetch new bitmap and save to device
         val bm = fetchImageFromUrl(imageUrl) ?: return null
         return importBitmapToDevice(context, bm, imageName)
     }
@@ -88,62 +93,49 @@ class BingImageApiNetwork {
         bitmap: Bitmap,
         imageName: String
     ): String {
-        // Set up file descriptors to save to device
+        // Check if image already exists
+        val resolver = context.contentResolver
+        var uri = getImageEntryUri(resolver, imageName)
+        if (uri.isNotBlank()) return uri
+
+        // Set up file descriptors to save to device and insert new entry
         val appDir =
             Environment.DIRECTORY_PICTURES + File.separator + context.getString(R.string.app_name)
-
-        // Stream in image data to external storage
-        val resolver = context.contentResolver
         val externalContentUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(
-                MediaStore.VOLUME_EXTERNAL_PRIMARY
-            )
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         } else {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
 
-        // Obtain valid device uri
-        lateinit var uri: Uri
+        val imageDetails = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, imageName)
+            put(MediaStore.Images.Media.TITLE, imageName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpg")
 
-        val cursor = getImageEntry(resolver, imageName)
-
-        if (cursor.count != 0 && cursor.moveToFirst()) { // Image already exists
-            val id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID))
-            cursor.close()
-            uri = Uri.withAppendedPath(externalContentUri, id.toString())
-        } else { // Insert new entry if doesn't exist
-
-            val imageDetails = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, imageName)
-                put(MediaStore.Images.Media.TITLE, imageName)
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpg")
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.Images.Media.RELATIVE_PATH, appDir)
-                    put(MediaStore.Images.Media.IS_PENDING, 1)
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, appDir)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
             }
-
-            val imageDeviceUri = resolver.insert(externalContentUri, imageDetails)
-
-            imageDeviceUri?.let { tmpUri ->
-                resolver.openOutputStream(tmpUri, "w")!!.use { os ->
-                    // Save bitmap
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
-                }
-
-                // Update global access after import
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    imageDetails.clear()
-                    imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
-                    resolver.update(tmpUri, imageDetails, null, null)
-                }
-            }
-
-            uri = imageDeviceUri ?: Uri.EMPTY
         }
 
-        return uri.toString()
+        val imageDeviceUri = resolver.insert(externalContentUri, imageDetails)
+
+        imageDeviceUri?.let { tmpUri ->
+            resolver.openOutputStream(tmpUri, "w")!!.use { os ->
+                // Save bitmap
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
+            }
+
+            // Update global access after import
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                imageDetails.clear()
+                imageDetails.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(tmpUri, imageDetails, null, null)
+            }
+        }
+
+        if (imageDeviceUri == null) return ""
+        return imageDeviceUri.toString()
     }
 
     /**
@@ -222,19 +214,36 @@ class BingImageApiNetwork {
     }
 
     @SuppressLint("Recycle") // Closing responsiblility for caller
-    private fun getImageEntry(resolver: ContentResolver, imageDisplayName: String): Cursor {
+    private fun getImageEntryUri(resolver: ContentResolver, imageDisplayName: String): String {
+        // Get cursor for image entry in media store
         val projection = arrayOf(
             MediaStore.Images.Media._ID
         )
         val selectionClause = MediaStore.Images.Media.DISPLAY_NAME + " = ?"
         val selectionArgs = mutableListOf(imageDisplayName)
 
-        return resolver.query(
+        val cursor = resolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             projection,
             selectionClause,
             selectionArgs.toTypedArray(),
             ""
         )!!
+
+        val externalContentUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+
+        // Check if cursor returned valid uri
+        if (cursor.count != 0 && cursor.moveToFirst()) { // Image already exists
+            val id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID))
+            cursor.close()
+            return Uri.withAppendedPath(externalContentUri, id.toString()).toString()
+        }
+
+        // Default no valid uri provided
+        return ""
     }
 }
