@@ -11,9 +11,8 @@ import java.time.LocalTime
 
 class ImportServiceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            scheduleServiceOnBoot(context)
-        } else if (intent.action == ACTION_APP_REFRESH_BACKGROUND) {
+        scheduleServiceOnBoot(context)
+        if (intent.action == ACTION_APP_REFRESH_BACKGROUND) {
             callService(context)
         }
     }

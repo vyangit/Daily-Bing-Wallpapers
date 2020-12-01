@@ -26,7 +26,6 @@ import com.example.dailybingwallpapers.app.adapters.BingImageAdapter
 import com.example.dailybingwallpapers.app.extensions.showSnackbar
 import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver
 import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver.Companion.ACTION_APP_REFRESH_BACKGROUND
-import com.example.dailybingwallpapers.app.services.BingImageImportService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
@@ -46,6 +45,7 @@ class MainActivity : AppCompatActivity(),
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var wallpaperManager: WallpaperManager
     private lateinit var mainViewModel: MainViewModel
+    private lateinit var refreshIntent: Intent
 
     private lateinit var layout: View
     private lateinit var wallpaperGalleryGridRecyclerView: RecyclerView
@@ -63,6 +63,12 @@ class MainActivity : AppCompatActivity(),
         )
         wallpaperManager = WallpaperManager.getInstance(this)
 
+        refreshIntent = Intent(
+            applicationContext,
+            ImportServiceReceiver::class.java
+        ).apply {
+            action = ACTION_APP_REFRESH_BACKGROUND
+        }
     }
 
     override fun onResume() {
@@ -71,8 +77,7 @@ class MainActivity : AppCompatActivity(),
         requestStoragePermission {
             initExternalStorageViews()
 
-            // Run an image scrap with the import service
-            startForegroundService(Intent(this, BingImageImportService::class.java))
+            sendBroadcast(refreshIntent)
         }
     }
 
@@ -148,15 +153,7 @@ class MainActivity : AppCompatActivity(),
                                 )
                             }
 
-                            // Refresh wallpaper since daily mode is on now
-                            val wallpaperRefreshIntent = Intent(
-                                applicationContext,
-                                ImportServiceReceiver::class.java
-                            ).apply {
-                                action = ACTION_APP_REFRESH_BACKGROUND
-                            }
-
-                            sendBroadcast(wallpaperRefreshIntent)
+                            sendBroadcast(refreshIntent)
                         }
                         setNegativeButton(R.string.activity_main_preview_wallpapers_gallery_daily_item_dialog_negative_button) { _, _ ->
                             // Do nothing, op cancelled
