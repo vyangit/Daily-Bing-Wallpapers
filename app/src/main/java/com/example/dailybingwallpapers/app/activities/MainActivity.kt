@@ -8,14 +8,13 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.view.ContextMenu
-import android.view.MenuInflater
-import android.view.View
+import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModelProvider
@@ -69,6 +68,8 @@ class MainActivity : AppCompatActivity(),
         ).apply {
             action = ACTION_APP_REFRESH_BACKGROUND
         }
+
+        setSupportActionBar(findViewById<Toolbar>(R.id.activity_main_toolbar))
     }
 
     override fun onResume() {
@@ -79,6 +80,21 @@ class MainActivity : AppCompatActivity(),
 
             sendBroadcast(refreshIntent)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_app_bar, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.menu_app_bar_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
+        }
+
+        return true
     }
 
     override fun onCreateContextMenu(
