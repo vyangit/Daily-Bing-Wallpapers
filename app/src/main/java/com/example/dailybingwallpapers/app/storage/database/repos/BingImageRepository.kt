@@ -106,31 +106,16 @@ class BingImageRepository(
                 imageName
             )
 
-            if (imageDeviceUri == null) {
-                val metaData = network.fetchImageMetaDataByDate(keyWithUri.date)
-                imageDeviceUri = metaData?.imageUrl?.let { url ->
-                    imageName = generateUniqueBingImageName(keyWithUri.imageUrl, keyWithUri.date)
-
-                    network.importImageFromUrlToDevice(
-                        context,
-                        url,
-                        imageName
-                    )
-                }
-            }
-
-            if (imageDeviceUri == null) {
+            val uriIsNull = imageDeviceUri == null
+            if (uriIsNull) {
                 bingImageDao.deleteByCompositeKeyWithUri(keyWithUri)
-                return true
+            } else {
+                // Update the Bing Image entity
+                keyWithUri.imageDeviceUri = imageDeviceUri.toString()
+                bingImageDao.updateUri(keyWithUri)
             }
-
-            // Image is valid after copying back the file
-            return false
+            return uriIsNull
         }
-    }
-
-    suspend fun deleteByCompositeKey(keyWithUri: BingImageCompositeKeyWithUri) {
-        bingImageDao.deleteByCompositeKeyWithUri(keyWithUri)
     }
 
     private fun generateUniqueBingImageName(bingImageMetaDataDTO: BingImageMetaDataDTO): String {
@@ -138,12 +123,10 @@ class BingImageRepository(
     }
 
     private fun generateUniqueBingImageName(imageUrl: String, date: LocalDate): String {
-        val imageUrlPart = imageUrl.let { imageUrl ->
-            imageUrl.substring(
-                imageUrl.indexOf("id=OHR.") + 7,
-                imageUrl.indexOf(".jpg") + 4
-            )
-        }
+        val imageUrlPart = imageUrl.substring(
+            imageUrl.indexOf("id=OHR.") + 7,
+            imageUrl.indexOf(".jpg") + 4
+        )
 
         val imageDateStamp = date.toString().replace("-", "")
         return imageDateStamp + '_' + imageUrlPart

@@ -16,14 +16,14 @@ data class BingImage(
         val imageUrl: String,
 
         @ColumnInfo(name = "image_device_uri")
-        val imageDeviceUri: String,
+        var imageDeviceUri: String,
 
-        val copyright: String,
+        var copyright: String,
 
         @ColumnInfo(name = "copyright_link")
-        val copyrightLink: String,
+        var copyrightLink: String,
 
-        val headline: String
+        var headline: String
 )
 
 @TypeConverters(BingImageTypeConverter::class)
@@ -35,5 +35,5 @@ data class BingImageCompositeKeyWithUri(
         val imageUrl: String,
 
         @ColumnInfo(name = "image_device_uri")
-        val imageDeviceUri: String,
+        var imageDeviceUri: String,
 )

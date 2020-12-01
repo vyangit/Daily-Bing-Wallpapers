@@ -30,6 +30,9 @@ interface BingImageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(bingImages: List<BingImage>)
 
+    @Update(entity = BingImage::class)
+    suspend fun updateUri(compositeKeyWithUri: BingImageCompositeKeyWithUri)
+
     // Deletes
     @Delete(entity = BingImage::class)
     suspend fun deleteByCompositeKeyWithUri(compositeKeyWithUri: BingImageCompositeKeyWithUri)
