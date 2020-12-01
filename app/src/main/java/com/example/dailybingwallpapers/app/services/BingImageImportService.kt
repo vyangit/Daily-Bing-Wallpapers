@@ -18,8 +18,9 @@ import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.lang.Integer.max
+import kotlinx.coroutines.withContext
 import java.lang.Integer.min
+import java.time.LocalDate
 
 const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
 
@@ -90,10 +91,10 @@ class BingImageImportService : Service(), ForegroundService {
     private fun runService() {
         // Fetch the data and close the service after
         CoroutineScope(Dispatchers.IO).launch {
-            importLatestBingImages()
-            importMissingBingImages()
-            refreshDailyWallpaper()
+            withContext(Dispatchers.IO) { importLatestBingImages() }
+            withContext(Dispatchers.IO) { importMissingBingImages() }
         }.invokeOnCompletion {
+            refreshDailyWallpaper()
             stopSelf()
         }
     }
@@ -109,7 +110,7 @@ class BingImageImportService : Service(), ForegroundService {
         }
     }
 
-    private suspend fun refreshDailyWallpaper() {
+    private fun refreshDailyWallpaper() {
         val sharedPrefs = getSharedPreferences(
             getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
@@ -118,42 +119,42 @@ class BingImageImportService : Service(), ForegroundService {
             getString(R.string.shared_prefs_app_globals_daily_mode_on),
             false
         )
+        val recordedWallpaperId = sharedPrefs.getInt(
+            getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+            -1
+        )
+        val wpManager = WallpaperManager.getInstance(applicationContext)
+        val currWallpaperId = wpManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
 
-        if (isDailyModeOn) {
-            val wpManager = WallpaperManager.getInstance(applicationContext)
-            val recordedWallpaperId = sharedPrefs.getInt(
-                getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-                -1
-            )
-            val currWallpaperId = wpManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
-            if (currWallpaperId == recordedWallpaperId) {
-                database.bingImageDao.mostRecentBingImage?.let { image ->
-                    if (wpManager.isSetWallpaperAllowed) {
-                        val uri = Uri.parse(image.imageDeviceUri)
-                        contentResolver.openInputStream(uri)!!.use { inputStream ->
+        if (isDailyModeOn && currWallpaperId == recordedWallpaperId) { // No change from last daily wallpaper set
+            database.bingImageDao.mostRecentBingImage?.let { image ->
+                if (image.date == LocalDate.now() && wpManager.isSetWallpaperAllowed) {
+                    val uri = Uri.parse(image.imageDeviceUri)
 
-                            val bingWallpaper = BitmapFactory.decodeStream(inputStream)
-                            val minSize = min(bingWallpaper.height, bingWallpaper.width)
-                            val leftDelta = (bingWallpaper.width / 2) - (minSize / 2)
-                            val topDelta = (bingWallpaper.height / 2) - (minSize / 2)
-                            val rect = Rect(
-                                max(0, leftDelta),
-                                max(0, topDelta),
-                                min(leftDelta + minSize, minSize),
-                                min(topDelta + minSize, minSize)
-                            )
-                            wpManager.setStream(inputStream, rect, true, FLAG_SYSTEM)
-                        }
+                    // Get wallpaper and crop as needed
+                    contentResolver.openInputStream(uri)?.use { inputStream ->
+                        val bingWallpaper = BitmapFactory.decodeStream(inputStream)
+                        val minSize = min(bingWallpaper.height, bingWallpaper.width)
+                        val minDelta = minSize / 2
+                        val leftDelta = (bingWallpaper.width / 2) - minDelta
+                        val topDelta = (bingWallpaper.height / 2) - minDelta
+                        val rect = Rect(
+                            leftDelta,
+                            topDelta,
+                            leftDelta + minSize,
+                            topDelta + minSize
+                        )
+                        wpManager.setBitmap(bingWallpaper, rect, true, FLAG_SYSTEM)
                     }
                 }
-            } else {
-                sharedPrefs.edit {
-                    putBoolean(getString(R.string.shared_prefs_app_globals_daily_mode_on), false)
-                    putInt(
-                        getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-                        currWallpaperId
-                    )
-                }
+            }
+        } else { // Daily mode has been disrupted and should be toggled off
+            sharedPrefs.edit {
+                putBoolean(getString(R.string.shared_prefs_app_globals_daily_mode_on), false)
+                putInt(
+                    getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+                    currWallpaperId
+                )
             }
         }
     }

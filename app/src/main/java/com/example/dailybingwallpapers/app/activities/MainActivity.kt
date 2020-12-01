@@ -71,7 +71,6 @@ class MainActivity : AppCompatActivity(),
         requestStoragePermission {
             initExternalStorageViews()
         }
-        updatePrefsIfWallpaperChanged()
     }
 
     override fun onCreateContextMenu(
@@ -283,29 +282,5 @@ class MainActivity : AppCompatActivity(),
 
         // Run an image scrap with the import service
         startForegroundService(Intent(this, BingImageImportService::class.java))
-    }
-
-    private fun updatePrefsIfWallpaperChanged(): Boolean {
-        val recordedWallpaperId = sharedPrefs.getInt(
-            getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-            -1
-        )
-        val currWallpaperId = wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
-        if (currWallpaperId != recordedWallpaperId) {
-            sharedPrefs.edit {
-                putInt(
-                    getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-                    currWallpaperId
-                )
-                putBoolean(
-                    getString(R.string.shared_prefs_app_globals_daily_mode_on),
-                    false
-                )
-            }
-
-            return true
-        }
-
-        return false
     }
 }
