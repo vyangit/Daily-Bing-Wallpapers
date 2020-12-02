@@ -2,26 +2,31 @@
 <resources>
     <string name="app_name">Daily Bing Wallpapers</string>
 
+    <!-- Generic phrases -->
     <string name="ok">OK</string>
     <string name="na">N/A</string>
     <string name="preview">Preview</string>
     <string name="today">Today</string>
     <string name="daily">Daily</string>
 
+    <!-- Storage permission messages -->
     <string name="storage_permission_required">Storage access is required to display the imported Bing images.</string>
     <string name="storage_permission_not_available">Storage is not available. Requesting storage permission.</string>
     <string name="storage_permission_available">Storage permission is available. Loading images.</string>
     <string name="storage_permission_granted">Storage permission was granted. Loading images.</string>
     <string name="storage_permission_denied">Storage permission request was denied.</string>
 
+    <!-- Global settings (i.e app sets these explicitly)-->
     <string name="shared_prefs_app_globals_file_key">GLOBAL</string>
     <string name="shared_prefs_app_globals_last_update_time">GLOBAL_LAST_UPDATE_TIME</string>
     <string name="shared_prefs_app_globals_daily_mode_on">GLOBAL_DAILY_MODE</string>
     <string name="shared_prefs_app_globals_recorded_wallpaper_id">GLOBAL_RECORDED_WALLPAPER_ID</string>
     <string name="shared_prefs_app_globals_last_daily_mode_update_date">GLOBAL_LAST_DAILY_MODE_UPDATE_DATE</string>
 
-    <string name="shared_prefs_app_settings_file_key">SETTINGS</string>
+    <!-- Preference settings (i.e user set these explicitly)-->
+    <string name="shared_prefs_app_default_wifi_only">DEFAULT WIFI ONLY</string>
 
+    <!-- Main Activity strings -->
     <string name="activity_main_preview_date_label">Date:</string>
     <string name="activity_main_preview_copyright_label">Copyright:</string>
     <string name="activity_main_preview_copyright_link_label">Copyright Link:</string>
@@ -48,29 +53,22 @@
 
     <string name="activity_settings_toolbar_title">Settings</string>
 
+    <!-- Settings activity strings -->
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="root_preferences_header_image_import">Image Download</string>
+    <string name="root_preferences_pref_wifi_only">Download over wifi</string>
+    <string name="root_preferences_pref_wifi_only_summary_on">Set to only use wifi to download images from Bing API</string>
+    <string name="root_preferences_pref_wifi_only_summary_off">Set to use wifi or cellular to download images from Bing API</string>
+
+    <!-- Menu strings for discover gallery view -->
     <string name="menu_activity_main_gallery_item_set_as">Set as</string>
 
     <string name="menu_activity_main_gallery_daily_item_set_wallpaper">Set daily</string>
 
     <string name="menu_app_bar_settings">Settings</string>
 
+    <!-- Service foreground notifications -->
     <string name="import_service_notification_title">Downloading Bing images</string>
     <string name="validator_service_notification_title">Checking if Bing image files exist</string>
-    <string name="title_activity_settings">SettingsActivity</string>
-
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
 
 </resources>

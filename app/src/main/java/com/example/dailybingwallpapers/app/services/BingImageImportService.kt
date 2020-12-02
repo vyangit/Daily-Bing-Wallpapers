@@ -7,9 +7,11 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.net.Uri
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.services.interfaces.ForegroundService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
@@ -90,8 +92,18 @@ class BingImageImportService : Service(), ForegroundService {
     private fun runService() {
         // Fetch the data and close the service after
         CoroutineScope(Dispatchers.IO).launch {
-            importLatestBingImages()
-            importMissingBingImages()
+            // Check if wifi mode is on before executing network ops
+            val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+            val isWifiOnlyOn = prefs.getBoolean(
+                getString(R.string.shared_prefs_app_default_wifi_only),
+                false
+            )
+            val wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val isWifiOn = wifiManager.isWifiEnabled
+            if (isWifiOnlyOn && isWifiOn) {
+                importLatestBingImages()
+                importMissingBingImages()
+            }
         }.invokeOnCompletion {
             refreshDailyWallpaper()
             stopSelf()
