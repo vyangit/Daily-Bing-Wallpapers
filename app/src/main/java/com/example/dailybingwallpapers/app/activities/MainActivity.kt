@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -11,10 +12,10 @@ import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
-import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModelProvider
@@ -23,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.adapters.BingImageAdapter
 import com.example.dailybingwallpapers.app.extensions.showSnackbar
+import com.example.dailybingwallpapers.app.receivers.DailyWallpaperRefreshReceiver
 import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver
 import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver.Companion.ACTION_APP_REFRESH_BACKGROUND
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
@@ -45,6 +47,7 @@ class MainActivity : AppCompatActivity(),
     private lateinit var wallpaperManager: WallpaperManager
     private lateinit var mainViewModel: MainViewModel
     private lateinit var refreshIntent: Intent
+    private lateinit var wallpaperRefreshReceiver: DailyWallpaperRefreshReceiver
 
     private lateinit var layout: View
     private lateinit var wallpaperGalleryGridRecyclerView: RecyclerView
@@ -55,21 +58,37 @@ class MainActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Set up variables
         layout = findViewById(R.id.activity_main)
         sharedPrefs = getSharedPreferences(
             getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
         )
         wallpaperManager = WallpaperManager.getInstance(this)
-
         refreshIntent = Intent(
             applicationContext,
             ImportServiceReceiver::class.java
         ).apply {
             action = ACTION_APP_REFRESH_BACKGROUND
         }
+        wallpaperRefreshReceiver = object : DailyWallpaperRefreshReceiver() {
+            override fun receiveResponse() {
+                Toast.makeText(
+                    applicationContext,
+                    "Daily wallpaper successfully changed",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
-        setSupportActionBar(findViewById<Toolbar>(R.id.activity_main_toolbar))
+        // Register receiver
+        val filter = IntentFilter().apply {
+            addAction(DailyWallpaperRefreshReceiver.ACTION_DAILY_WALLPAPER_REFRESHED)
+        }
+        registerReceiver(wallpaperRefreshReceiver, filter)
+
+        // Set up toolbar
+        setSupportActionBar(findViewById(R.id.activity_main_toolbar))
     }
 
     override fun onResume() {

@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.example.dailybingwallpapers.R
+import com.example.dailybingwallpapers.app.receivers.DailyWallpaperRefreshReceiver
 import com.example.dailybingwallpapers.app.services.interfaces.ForegroundService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
@@ -175,6 +176,7 @@ class BingImageImportService : Service(), ForegroundService {
                             image.date.toString()
                         )
                     }
+                    sendBroadcast(Intent(DailyWallpaperRefreshReceiver.ACTION_DAILY_WALLPAPER_REFRESHED))
                 }
             }
         } else { // Daily mode has been disrupted and should be toggled off
@@ -192,4 +194,5 @@ class BingImageImportService : Service(), ForegroundService {
             )
         }
     }
+
 }
