@@ -100,7 +100,7 @@ class BingImageImportService : Service(), ForegroundService {
             )
             val wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
             val isWifiOn = wifiManager.isWifiEnabled
-            if (isWifiOnlyOn && isWifiOn) {
+            if ((isWifiOnlyOn && isWifiOn) || !isWifiOnlyOn) {
                 importLatestBingImages()
                 importMissingBingImages()
             }
