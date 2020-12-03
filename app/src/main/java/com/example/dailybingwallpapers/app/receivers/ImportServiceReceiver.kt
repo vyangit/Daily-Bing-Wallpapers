@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat.startForegroundService
 import com.example.dailybingwallpapers.app.services.BingImageImportService
-import java.time.LocalTime
+import java.util.*
 
 class ImportServiceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -30,10 +30,15 @@ class ImportServiceReceiver : BroadcastReceiver() {
 
         // Check and import wallpaper updates from the Bing Images API
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = System.currentTimeMillis()
+        cal.set(Calendar.HOUR_OF_DAY, 1)
+        cal.set(Calendar.MINUTE, 0)
         alarmManager.setRepeating(
             AlarmManager.RTC_WAKEUP,
-            LocalTime.of(1, 0).toNanoOfDay() * 1000,
-            1000 * 60 * 60 * 24, // Every day
+            cal.timeInMillis,
+            AlarmManager.INTERVAL_HOUR * 2,
             pendingIntent
         )
     }

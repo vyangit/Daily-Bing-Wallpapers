@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity(),
 
         // Register receiver
         val filter = IntentFilter().apply {
-            addAction(DailyWallpaperRefreshReceiver.ACTION_DAILY_WALLPAPER_REFRESHED)
+            addAction(DailyWallpaperRefreshReceiver.ACTION_APP_DAILY_WALLPAPER_REFRESHED)
         }
         registerReceiver(wallpaperRefreshReceiver, filter)
 

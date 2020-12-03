@@ -176,7 +176,7 @@ class BingImageImportService : Service(), ForegroundService {
                             image.date.toString()
                         )
                     }
-                    sendBroadcast(Intent(DailyWallpaperRefreshReceiver.ACTION_DAILY_WALLPAPER_REFRESHED))
+                    sendBroadcast(Intent(DailyWallpaperRefreshReceiver.ACTION_APP_DAILY_WALLPAPER_REFRESHED))
                 }
             }
         } else { // Daily mode has been disrupted and should be toggled off

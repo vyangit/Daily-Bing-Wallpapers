@@ -12,7 +12,7 @@ abstract class DailyWallpaperRefreshReceiver : BroadcastReceiver() {
     abstract fun receiveResponse()
 
     companion object {
-        const val ACTION_DAILY_WALLPAPER_REFRESHED =
+        const val ACTION_APP_DAILY_WALLPAPER_REFRESHED =
             "com.example.dailybingwallpapers.ACTION_DAILY_WALLPAPER_REFRESHED"
     }
 }
