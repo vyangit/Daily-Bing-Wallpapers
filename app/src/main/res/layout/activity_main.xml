@@ -74,8 +74,8 @@
                         android:layout_height="match_parent"
                         android:adjustViewBounds="true"
                         android:background="@color/activity_main_preview_background"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/test_wallpaper" />
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_baseline_daily" />
                 </androidx.cardview.widget.CardView>
 
                 <LinearLayout
@@ -110,7 +110,7 @@
                             android:gravity="center_vertical"
                             android:overScrollMode="ifContentScrolls"
                             android:padding="@dimen/spacing"
-                            android:text="This is a cool place" />
+                            android:text="@string/activity_main_preview_wallpapers_gallery_daily_item_headline" />
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
 
@@ -156,7 +156,7 @@
                         android:layout_height="wrap_content"
                         android:scrollHorizontally="true"
                         android:singleLine="true"
-                        android:text="@string/na" />
+                        android:text="@string/activity_main_preview_wallpapers_gallery_daily_item_date" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/activity_main_details_copyright"

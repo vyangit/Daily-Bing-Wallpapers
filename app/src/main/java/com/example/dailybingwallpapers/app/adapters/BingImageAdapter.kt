@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
@@ -42,6 +43,8 @@ class BingImageAdapter :
             .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_image)
         val dateText: MaterialTextView = galleryLayout
             .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_date)
+        val progressBar: ProgressBar = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_progress_bar)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingImageViewHolder {
@@ -51,7 +54,11 @@ class BingImageAdapter :
     }
 
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {
+        // Reset progress bar
+        holder.progressBar.visibility = View.VISIBLE
+
         if (position == 0) {
+            holder.progressBar.visibility = View.GONE
             holder.imageView.setImageResource(R.drawable.ic_baseline_daily)
             holder.imageView.scaleType = ImageView.ScaleType.FIT_CENTER
             holder.dateText.setText(R.string.daily)
