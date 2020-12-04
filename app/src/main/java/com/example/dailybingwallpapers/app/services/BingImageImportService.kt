@@ -1,15 +1,19 @@
 package com.example.dailybingwallpapers.app.services
 
 import android.app.*
+import android.app.WallpaperManager.FLAG_LOCK
 import android.app.WallpaperManager.FLAG_SYSTEM
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.example.dailybingwallpapers.R
@@ -30,6 +34,7 @@ class BingImageImportService : Service(), ForegroundService {
     private lateinit var database: AppDatabase
     private lateinit var network: BingImageApiNetwork
     private lateinit var repo: BingImageRepository
+    private lateinit var wallpaperManager: WallpaperManager
 
     override fun onCreate() {
         super.onCreate()
@@ -37,6 +42,7 @@ class BingImageImportService : Service(), ForegroundService {
         database = AppDatabase.getDatabase(this)
         network = BingImageApiNetwork.getService()
         repo = BingImageRepository(this, network, database.bingImageDao)
+        wallpaperManager = WallpaperManager.getInstance(applicationContext)
 
         // Android 8 >= foreground promotion needed
         marshallNotificationChannel()
@@ -96,7 +102,7 @@ class BingImageImportService : Service(), ForegroundService {
             // Check if wifi mode is on before executing network ops
             val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
             val isWifiOnlyOn = prefs.getBoolean(
-                getString(R.string.shared_prefs_app_default_wifi_only),
+                getString(R.string.default_prefs_wifi_only),
                 false
             )
             val wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -127,72 +133,166 @@ class BingImageImportService : Service(), ForegroundService {
             getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
         )
-        val isDailyModeOn = sharedPrefs.getBoolean(
-            getString(R.string.shared_prefs_app_globals_daily_mode_on),
-            false
-        )
-        val recordedWallpaperId = sharedPrefs.getInt(
-            getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-            -1
-        )
         val lastDailyUpdateDate = sharedPrefs.getString(
             getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
             ""
         )
 
-        val wpManager = WallpaperManager.getInstance(applicationContext)
-
-        if (isDailyModeOn &&
-            wpManager.getWallpaperId(FLAG_SYSTEM) == recordedWallpaperId
-        ) { // No change from last daily wallpaper set
+        //TODO: Update functionality to support updating the lock screen as well
+        if (isDailyModeOn() && wallpaperManager.isSetWallpaperAllowed) { // No change from last daily wallpaper set
             database.bingImageDao.mostRecentBingImage?.let { image ->
-
-                if (lastDailyUpdateDate != image.date.toString() &&
-                    image.date == LocalDate.now() &&
-                    wpManager.isSetWallpaperAllowed
-                ) {
-
+                if (lastDailyUpdateDate != LocalDate.now().toString()) {
                     val uri = Uri.parse(image.imageDeviceUri)
 
                     // Get wallpaper and crop as needed
                     contentResolver.openInputStream(uri)?.use { inputStream ->
                         val bingWallpaper = BitmapFactory.decodeStream(inputStream)
-                        val minSize = min(bingWallpaper.height, bingWallpaper.width)
-                        val minDelta = minSize / 2
-                        val leftDelta = (bingWallpaper.width / 2) - minDelta
-                        val topDelta = (bingWallpaper.height / 2) - minDelta
-                        val rect = Rect(
-                            leftDelta,
-                            topDelta,
-                            leftDelta + minSize,
-                            topDelta + minSize
-                        )
-                        wpManager.setBitmap(bingWallpaper, rect, true, FLAG_SYSTEM)
-                    }
+                        val wallpaperId = setDailyImage(bingWallpaper)
 
-                    sharedPrefs.edit {
-                        putString(
-                            getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
-                            image.date.toString()
-                        )
+                        // Update daily wallpaper refresh
+                        sharedPrefs.edit {
+                            putString(
+                                getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
+                                image.date.toString()
+                            )
+                            putInt(
+                                getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+                                wallpaperId
+                            )
+                        }
+
+                        // Send broadcast of wallpaper refresh
+                        sendBroadcast(Intent(DailyWallpaperRefreshReceiver.ACTION_APP_DAILY_WALLPAPER_REFRESHED))
                     }
-                    sendBroadcast(Intent(DailyWallpaperRefreshReceiver.ACTION_APP_DAILY_WALLPAPER_REFRESHED))
                 }
             }
         } else { // Daily mode has been disrupted and should be toggled off
             sharedPrefs.edit {
                 putBoolean(getString(R.string.shared_prefs_app_globals_daily_mode_on), false)
                 remove(getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date))
+                remove(getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id))
+            }
+        }
+    }
+
+    private fun isDailyModeOn(): Boolean {
+        val sharedPrefs = getSharedPreferences(
+            getString(R.string.shared_prefs_app_globals_file_key),
+            Context.MODE_PRIVATE
+        )
+        val wallpaperTargetsArray = resources.getStringArray(
+            R.array.root_preferences_header_wallpaper_target_values
+        )
+        val recordedWallpaperId = sharedPrefs.getInt(
+            getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+            -1
+        )
+        val lastWallpaperTarget = sharedPrefs.getString(
+            getString(R.string.shared_prefs_app_globals_wallpaper_target),
+            wallpaperTargetsArray[0]
+        )
+        var isDailyModeOn = sharedPrefs.getBoolean(
+            getString(R.string.shared_prefs_app_globals_daily_mode_on),
+            false
+        )
+
+        when (lastWallpaperTarget) {
+            wallpaperTargetsArray[0] -> {
+                isDailyModeOn = isDailyModeOn &&
+                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+            }
+            wallpaperTargetsArray[1] -> {
+                isDailyModeOn = isDailyModeOn &&
+                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK)
+            }
+            wallpaperTargetsArray[2] -> {
+                isDailyModeOn = isDailyModeOn &&
+                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK) &&
+                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+            }
+            else -> {
+                isDailyModeOn = false
             }
         }
 
-        // Record the current wallpaper
-        sharedPrefs.edit {
-            putInt(
-                getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-                wpManager.getWallpaperId(FLAG_SYSTEM)
+        return isDailyModeOn
+    }
+
+    /**
+     * Sets the wallpaper based on the daily mode settings
+     *
+     * @param bingWallpaper Image to set
+     *
+     * @return The wallpaper id provided by {@link #WallpaperManager.getWallpaperId(Int)}
+     */
+    private fun setDailyImage(bingWallpaper: Bitmap): Int {
+        val wallpaperTargetValue = PreferenceManager
+            .getDefaultSharedPreferences(this)
+            .getString(
+                getString(R.string.default_prefs_wallpaper_targets), "WALLPAPER"
             )
+        val wallpaperTargetsArray = resources.getStringArray(
+            R.array.root_preferences_header_wallpaper_target_values
+        )
+
+        // Create rectangle for system wallpaper
+        val wpHeight = bingWallpaper.height
+        val wpWidth = bingWallpaper.width
+
+        // Create centered landscape rect for system wallpaper
+        val minSize = min(bingWallpaper.height, bingWallpaper.width)
+        val minDelta = minSize / 2
+        val leftDelta = (bingWallpaper.width / 2) - minDelta
+        val topDelta = (bingWallpaper.height / 2) - minDelta
+        val systemWpRect = Rect(
+            leftDelta,
+            topDelta,
+            leftDelta + minSize,
+            topDelta + minSize
+        )
+
+        // Create cropped center rect for lock screen wallpaper
+        val metrics = DisplayMetrics()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            applicationContext.display?.getRealMetrics(metrics)
+        } else {
+            val windowManager = applicationContext.getSystemService(WINDOW_SERVICE) as WindowManager
+            windowManager.defaultDisplay.getRealMetrics(metrics)
         }
+
+        //TODO: Fix lock screen wallpaper centering
+        val deviceWidth = metrics.widthPixels
+        val deviceHeight = metrics.heightPixels
+
+        val scaledHeight = minSize
+//        val scaledWidth =
+//        val lockScreenRect = Rect(
+//
+//        )
+
+        when (wallpaperTargetValue) {
+            wallpaperTargetsArray[0] -> { // target is system
+                wallpaperManager.setBitmap(bingWallpaper, systemWpRect, true, FLAG_SYSTEM)
+                return wallpaperManager.getWallpaperId(FLAG_SYSTEM)
+            }
+            wallpaperTargetsArray[1] -> { // target is lock screen
+//                wallpaperManager.setWallpaperOffsets(0.5f,0.5f)
+                wallpaperManager.setBitmap(bingWallpaper, null, true, FLAG_LOCK)
+//                wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
+                return wallpaperManager.getWallpaperId(FLAG_LOCK)
+            }
+            wallpaperTargetsArray[2] -> { // target is system and lock screen
+                wallpaperManager.setBitmap(bingWallpaper, systemWpRect, true, FLAG_SYSTEM)
+                wallpaperManager.setBitmap(bingWallpaper, null, true, FLAG_LOCK)
+//                wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
+                return wallpaperManager.getWallpaperId(FLAG_SYSTEM)
+            }
+            else -> {
+                //Do nothing
+            }
+        }
+
+        return 0 // Failure case
     }
 
 }

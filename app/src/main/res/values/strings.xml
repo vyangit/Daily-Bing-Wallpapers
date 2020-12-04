@@ -22,9 +22,11 @@
     <string name="shared_prefs_app_globals_daily_mode_on">GLOBAL_DAILY_MODE</string>
     <string name="shared_prefs_app_globals_recorded_wallpaper_id">GLOBAL_RECORDED_WALLPAPER_ID</string>
     <string name="shared_prefs_app_globals_last_daily_mode_update_date">GLOBAL_LAST_DAILY_MODE_UPDATE_DATE</string>
+    <string name="shared_prefs_app_globals_wallpaper_target">GLOBAL_LAST_WALLPAPER_TARGET</string>
 
-    <!-- Preference settings (i.e user set these explicitly)-->
-    <string name="shared_prefs_app_default_wifi_only">DEFAULT WIFI ONLY</string>
+    <!-- Default preference settings (i.e user set these explicitly)-->
+    <string name="default_prefs_wifi_only">DEFAULT_WIFI_ONLY</string>
+    <string name="default_prefs_wallpaper_targets">DEFAULT_WALLPAPER_TARGETS</string>
 
     <!-- Main Activity strings -->
     <string name="activity_main_preview_date_label">Date:</string>
@@ -60,11 +62,18 @@
     <string name="root_preferences_pref_wifi_only_summary_on">Set to only use wifi to download images from Bing API</string>
     <string name="root_preferences_pref_wifi_only_summary_off">Set to use wifi or cellular to download images from Bing API</string>
 
+    <string name="root_preferences_header_daily_mode">Daily Mode</string>
+    <string name="root_preferences_header_wallpaper_target">Wallpaper targets</string>
+    <string name="root_preferences_header_wallpaper_target_summary">Indicates which screens will be updated with the wallpaper</string>
+    <string name="root_preferences_header_wallpaper_target_default_value">Wallpaper</string>
+
+
     <!-- Menu strings for discover gallery view -->
     <string name="menu_activity_main_gallery_item_set_as">Set as</string>
 
     <string name="menu_activity_main_gallery_daily_item_set_wallpaper">Set daily</string>
 
+    <!-- Menu strings for app bar -->
     <string name="menu_app_bar_settings">Settings</string>
 
     <!-- Service foreground notifications -->

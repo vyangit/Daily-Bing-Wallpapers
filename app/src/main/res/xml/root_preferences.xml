@@ -1,13 +1,21 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="@string/root_preferences_header_image_import">
-
         <SwitchPreference
             app:defaultValue="false"
-            app:key="@string/shared_prefs_app_default_wifi_only"
+            app:key="@string/default_prefs_wifi_only"
             app:summaryOff="@string/root_preferences_pref_wifi_only_summary_off"
             app:summaryOn="@string/root_preferences_pref_wifi_only_summary_on"
             app:title="@string/root_preferences_pref_wifi_only" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/root_preferences_header_daily_mode">
+        <ListPreference
+            app:defaultValue="WALLPAPER"
+            app:entries="@array/root_preferences_header_wallpaper_target_entries"
+            app:entryValues="@array/root_preferences_header_wallpaper_target_values"
+            app:key="@string/default_prefs_wallpaper_targets"
+            app:summary="@string/root_preferences_header_wallpaper_target_summary"
+            app:title="@string/root_preferences_header_wallpaper_target" />
+    </PreferenceCategory>
 </PreferenceScreen>

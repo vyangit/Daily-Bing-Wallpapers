@@ -1,12 +1,14 @@
 <resources>
     <!-- Reply Preference -->
-    <string-array name="reply_entries">
-        <item>Reply</item>
-        <item>Reply to all</item>
+    <string-array name="root_preferences_header_wallpaper_target_entries">
+        <item>Wallpaper</item>
+        <item>Lockscreen</item>
+        <item>Wallpaper and Lockscreen</item>
     </string-array>
 
-    <string-array name="reply_values">
-        <item>reply</item>
-        <item>reply_all</item>
+    <string-array name="root_preferences_header_wallpaper_target_values">
+        <item>WALLPAPER</item>
+        <item>LOCKSCREEN</item>
+        <item>BOTH</item>
     </string-array>
 </resources>
