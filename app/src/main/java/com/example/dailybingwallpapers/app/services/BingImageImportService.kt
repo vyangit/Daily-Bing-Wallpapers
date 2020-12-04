@@ -139,7 +139,6 @@ class BingImageImportService : Service(), ForegroundService {
             ""
         )
 
-        //TODO: Update functionality to support updating the lock screen as well
         if (isDailyModeOn() && wallpaperManager.isSetWallpaperAllowed) { // No change from last daily wallpaper set
             database.bingImageDao.mostRecentBingImage?.let { image ->
                 if (lastDailyUpdateDate != LocalDate.now().toString()) {

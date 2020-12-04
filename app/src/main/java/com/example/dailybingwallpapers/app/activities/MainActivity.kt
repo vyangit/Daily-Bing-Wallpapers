@@ -41,7 +41,8 @@ class MainActivity : AppCompatActivity(),
     BingImageAdapter.OnBingImageSelectedListener,
     BingImageAdapter.OnBingImageLongClickListener,
     BingImageAdapter.OnDailyItemSelectedListener,
-    BingImageAdapter.OnDailyItemLongClickListener {
+    BingImageAdapter.OnDailyItemLongClickListener,
+    SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var wallpaperManager: WallpaperManager
@@ -80,6 +81,8 @@ class MainActivity : AppCompatActivity(),
                 ).show()
             }
         }
+
+        sharedPrefs.registerOnSharedPreferenceChangeListener(this)
 
         // Register receiver
         val filter = IntentFilter().apply {
@@ -206,6 +209,13 @@ class MainActivity : AppCompatActivity(),
         pMenu.show()
     }
 
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        if (key == getString(R.string.shared_prefs_app_globals_daily_mode_on)) {
+            val isDailyOn = sharedPreferences?.getBoolean(key, false) ?: false
+            wallpaperGalleryGridAdapter.isDailyOn = isDailyOn
+        }
+    }
+
     private fun requestStoragePermission(
         successAction: () -> Unit
     ) {
@@ -282,6 +292,10 @@ class MainActivity : AppCompatActivity(),
         wallpaperGalleryGridAdapter.bingImageLongClickListener = this
         wallpaperGalleryGridRecyclerView.layoutManager = wallpaperGalleryGridLayoutManager
         wallpaperGalleryGridRecyclerView.adapter = wallpaperGalleryGridAdapter
+        wallpaperGalleryGridAdapter.isDailyOn = sharedPrefs.getBoolean(
+            getString(R.string.shared_prefs_app_globals_daily_mode_on),
+            false
+        )
 
         mainViewModel.previewImage.observe(this) { value ->
             if (value == null) {

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.RelativeLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailybingwallpapers.R
 import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
@@ -32,6 +33,11 @@ class BingImageAdapter :
     }
 
     var bingImages: List<BingImage> = listOf()
+    var isDailyOn: Boolean = false
+        set(isOn: Boolean) {
+            field = isOn
+            notifyItemChanged(0)
+        }
     lateinit var bingImageSelectedListener: OnBingImageSelectedListener
     lateinit var bingImageLongClickListener: OnBingImageLongClickListener
     lateinit var dailyItemSelectedListener: OnDailyItemSelectedListener
@@ -45,6 +51,8 @@ class BingImageAdapter :
             .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_date)
         val progressBar: ProgressBar = galleryLayout
             .findViewById(R.id.activity_main_wallpapers_gallery_progress_bar)
+        val activeOverlay: RelativeLayout = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_using_overlay)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingImageViewHolder {
@@ -56,6 +64,9 @@ class BingImageAdapter :
     override fun onBindViewHolder(holder: BingImageViewHolder, position: Int) {
         // Reset progress bar
         holder.progressBar.visibility = View.VISIBLE
+        holder.activeOverlay.visibility = View.GONE
+        holder.imageView.setOnLongClickListener(null)
+        holder.imageView.setOnClickListener(null)
 
         if (position == 0) {
             holder.progressBar.visibility = View.GONE
@@ -63,17 +74,21 @@ class BingImageAdapter :
             holder.imageView.scaleType = ImageView.ScaleType.FIT_CENTER
             holder.dateText.setText(R.string.daily)
 
-            if (this::dailyItemSelectedListener.isInitialized) {
-                holder.imageView.setOnClickListener {
-                    dailyItemSelectedListener.onDailyItemSelected()
+            if (!isDailyOn) {
+                if (this::dailyItemSelectedListener.isInitialized) {
+                    holder.imageView.setOnClickListener {
+                        dailyItemSelectedListener.onDailyItemSelected()
+                    }
                 }
-            }
 
-            if (this::dailyItemLongClickListener.isInitialized) {
-                holder.imageView.setOnLongClickListener { view ->
-                    dailyItemLongClickListener.onDailyItemLongClick(view)
-                    true
+                if (this::dailyItemLongClickListener.isInitialized) {
+                    holder.imageView.setOnLongClickListener { view ->
+                        dailyItemLongClickListener.onDailyItemLongClick(view)
+                        true
+                    }
                 }
+            } else {
+                holder.activeOverlay.visibility = View.VISIBLE
             }
         } else {
             val bingImage = bingImages[position - 1]
@@ -101,5 +116,4 @@ class BingImageAdapter :
     override fun getItemCount(): Int {
         return bingImages.size + 1
     }
-
 }
