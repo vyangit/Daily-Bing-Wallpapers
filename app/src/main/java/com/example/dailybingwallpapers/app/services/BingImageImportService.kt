@@ -25,8 +25,9 @@ import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.lang.Integer.min
 import java.time.LocalDate
+import kotlin.math.floor
+import kotlin.math.min
 
 const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
 
@@ -189,7 +190,7 @@ class BingImageImportService : Service(), ForegroundService {
         )
         val lastWallpaperTarget = sharedPrefs.getString(
             getString(R.string.shared_prefs_app_globals_wallpaper_target),
-            wallpaperTargetsArray[0]
+            ""
         )
         var isDailyModeOn = sharedPrefs.getBoolean(
             getString(R.string.shared_prefs_app_globals_daily_mode_on),
@@ -211,7 +212,7 @@ class BingImageImportService : Service(), ForegroundService {
                         recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
             }
             else -> {
-                isDailyModeOn = false
+                // Do nothing
             }
         }
 
@@ -235,20 +236,19 @@ class BingImageImportService : Service(), ForegroundService {
             R.array.root_preferences_header_wallpaper_target_values
         )
 
-        // Create rectangle for system wallpaper
+        // Create crop rectangles for screens
         val wpHeight = bingWallpaper.height
         val wpWidth = bingWallpaper.width
 
         // Create centered landscape rect for system wallpaper
-        val minSize = min(bingWallpaper.height, bingWallpaper.width)
-        val minDelta = minSize / 2
-        val leftDelta = (bingWallpaper.width / 2) - minDelta
-        val topDelta = (bingWallpaper.height / 2) - minDelta
-        val systemWpRect = Rect(
+        val minDelta = min(wpHeight, wpWidth) / 2
+        val leftDelta = (wpWidth / 2) - minDelta
+        val topDelta = (wpHeight / 2) - minDelta
+        val systemRect = Rect(
             leftDelta,
             topDelta,
-            leftDelta + minSize,
-            topDelta + minSize
+            wpWidth - leftDelta,
+            wpHeight - topDelta
         )
 
         // Create cropped center rect for lock screen wallpaper
@@ -260,31 +260,33 @@ class BingImageImportService : Service(), ForegroundService {
             windowManager.defaultDisplay.getRealMetrics(metrics)
         }
 
-        //TODO: Fix lock screen wallpaper centering
-        val deviceWidth = metrics.widthPixels
-        val deviceHeight = metrics.heightPixels
-
-        val scaledHeight = minSize
-//        val scaledWidth =
-//        val lockScreenRect = Rect(
-//
-//        )
+        val deviceWidth: Float = metrics.widthPixels.toFloat()
+        val deviceHeight: Float = metrics.heightPixels.toFloat()
+        val minRatio: Float =
+            min(wpWidth.toFloat() / deviceWidth, wpHeight.toFloat() / deviceHeight)
+        val cropWidth = deviceWidth * minRatio
+        val cropHeight = deviceHeight * minRatio
+        val lockLeftDelta = floor(wpWidth / 2 - cropWidth / 2).toInt()
+        val lockTopDelta = floor(wpHeight / 2 - cropHeight / 2).toInt()
+        val lockScreenRect = Rect(
+            lockLeftDelta,
+            lockTopDelta,
+            wpWidth - lockLeftDelta,
+            wpHeight - lockTopDelta
+        )
 
         when (wallpaperTargetValue) {
             wallpaperTargetsArray[0] -> { // target is system
-                wallpaperManager.setBitmap(bingWallpaper, systemWpRect, true, FLAG_SYSTEM)
+                wallpaperManager.setBitmap(bingWallpaper, systemRect, true, FLAG_SYSTEM)
                 return wallpaperManager.getWallpaperId(FLAG_SYSTEM)
             }
             wallpaperTargetsArray[1] -> { // target is lock screen
-//                wallpaperManager.setWallpaperOffsets(0.5f,0.5f)
-                wallpaperManager.setBitmap(bingWallpaper, null, true, FLAG_LOCK)
-//                wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
+                wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
                 return wallpaperManager.getWallpaperId(FLAG_LOCK)
             }
             wallpaperTargetsArray[2] -> { // target is system and lock screen
-                wallpaperManager.setBitmap(bingWallpaper, systemWpRect, true, FLAG_SYSTEM)
-                wallpaperManager.setBitmap(bingWallpaper, null, true, FLAG_LOCK)
-//                wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
+                wallpaperManager.setBitmap(bingWallpaper, systemRect, true, FLAG_SYSTEM)
+                wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
                 return wallpaperManager.getWallpaperId(FLAG_SYSTEM)
             }
             else -> {
