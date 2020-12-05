@@ -21,6 +21,7 @@ import com.example.dailybingwallpapers.app.receivers.DailyWallpaperRefreshReceiv
 import com.example.dailybingwallpapers.app.services.interfaces.ForegroundService
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
+import com.example.dailybingwallpapers.app.utils.PreferencesUtil
 import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -134,14 +135,17 @@ class BingImageImportService : Service(), ForegroundService {
             getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
         )
-        val lastDailyUpdateDate = sharedPrefs.getString(
-            getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
-            ""
-        )
 
-        if (isDailyModeOn() && wallpaperManager.isSetWallpaperAllowed) { // No change from last daily wallpaper set
+        if (PreferencesUtil.isDailyModeOn(this) && wallpaperManager.isSetWallpaperAllowed) { // No change from last daily wallpaper set
             database.bingImageDao.mostRecentBingImage?.let { image ->
-                if (lastDailyUpdateDate != LocalDate.now().toString()) {
+                val lastDailyUpdateDate = sharedPrefs.getString(
+                    getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
+                    ""
+                )
+
+                if (PreferencesUtil.hasDailyTargetModeChanged(this)
+                    || lastDailyUpdateDate != LocalDate.now().toString()
+                ) {
                     val uri = Uri.parse(image.imageDeviceUri)
 
                     // Get wallpaper and crop as needed
@@ -151,9 +155,21 @@ class BingImageImportService : Service(), ForegroundService {
 
                         // Update daily wallpaper refresh
                         sharedPrefs.edit {
+                            putBoolean(
+                                getString(R.string.shared_prefs_app_globals_daily_mode_on),
+                                true
+                            )
                             putString(
                                 getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
                                 image.date.toString()
+                            )
+                            putString(
+                                getString(R.string.shared_prefs_app_globals_wallpaper_target),
+                                PreferenceManager.getDefaultSharedPreferences(baseContext)
+                                    .getString(
+                                        getString(R.string.default_prefs_wallpaper_targets),
+                                        resources.getStringArray(R.array.root_preferences_header_wallpaper_target_values)[0]
+                                    )
                             )
                             putInt(
                                 getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
@@ -175,48 +191,6 @@ class BingImageImportService : Service(), ForegroundService {
         }
     }
 
-    private fun isDailyModeOn(): Boolean {
-        val sharedPrefs = getSharedPreferences(
-            getString(R.string.shared_prefs_app_globals_file_key),
-            Context.MODE_PRIVATE
-        )
-        val wallpaperTargetsArray = resources.getStringArray(
-            R.array.root_preferences_header_wallpaper_target_values
-        )
-        val recordedWallpaperId = sharedPrefs.getInt(
-            getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-            -1
-        )
-        val lastWallpaperTarget = sharedPrefs.getString(
-            getString(R.string.shared_prefs_app_globals_wallpaper_target),
-            ""
-        )
-        var isDailyModeOn = sharedPrefs.getBoolean(
-            getString(R.string.shared_prefs_app_globals_daily_mode_on),
-            false
-        )
-
-        when (lastWallpaperTarget) {
-            wallpaperTargetsArray[0] -> {
-                isDailyModeOn = isDailyModeOn &&
-                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
-            }
-            wallpaperTargetsArray[1] -> {
-                isDailyModeOn = isDailyModeOn &&
-                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK)
-            }
-            wallpaperTargetsArray[2] -> {
-                isDailyModeOn = isDailyModeOn &&
-                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK) &&
-                        recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
-            }
-            else -> {
-                // Do nothing
-            }
-        }
-
-        return isDailyModeOn
-    }
 
     /**
      * Sets the wallpaper based on the daily mode settings
@@ -256,6 +230,7 @@ class BingImageImportService : Service(), ForegroundService {
             applicationContext.display?.getRealMetrics(metrics)
         } else {
             val windowManager = applicationContext.getSystemService(WINDOW_SERVICE) as WindowManager
+            @Suppress("DEPRECATION")
             windowManager.defaultDisplay.getRealMetrics(metrics)
         }
 

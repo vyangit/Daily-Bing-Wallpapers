@@ -1,7 +1,6 @@
 package com.example.dailybingwallpapers.app.activities
 
 import android.Manifest
-import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -30,6 +29,7 @@ import com.example.dailybingwallpapers.app.receivers.ImportServiceReceiver.Compa
 import com.example.dailybingwallpapers.app.storage.database.AppDatabase
 import com.example.dailybingwallpapers.app.storage.database.entities.BingImage
 import com.example.dailybingwallpapers.app.storage.database.repos.BingImageRepository
+import com.example.dailybingwallpapers.app.utils.PreferencesUtil
 import com.example.dailybingwallpapers.app.view_models.MainViewModel
 import com.example.dailybingwallpapers.network.BingImageApiNetwork
 import com.google.android.material.snackbar.Snackbar
@@ -45,7 +45,6 @@ class MainActivity : AppCompatActivity(),
     SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var sharedPrefs: SharedPreferences
-    private lateinit var wallpaperManager: WallpaperManager
     private lateinit var mainViewModel: MainViewModel
     private lateinit var refreshIntent: Intent
     private lateinit var wallpaperRefreshReceiver: DailyWallpaperRefreshReceiver
@@ -65,7 +64,6 @@ class MainActivity : AppCompatActivity(),
             getString(R.string.shared_prefs_app_globals_file_key),
             Context.MODE_PRIVATE
         )
-        wallpaperManager = WallpaperManager.getInstance(this)
         refreshIntent = Intent(
             applicationContext,
             ImportServiceReceiver::class.java
@@ -97,6 +95,9 @@ class MainActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
+//        if (::wallpaperGalleryGridAdapter.isInitialized) {
+//            wallpaperGalleryGridAdapter.isDailyOn = PreferencesUtil.isDailyModeOn(this)
+//        }
         requestStoragePermission {
             initExternalStorageViews()
 
@@ -143,7 +144,6 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onBingImageSelected(bingImage: BingImage) {
-        //TODO: Check current wallpaper and set marker for recycler
         mainViewModel.onPreviewWallpaperSelected(bingImage)
     }
 
@@ -290,12 +290,10 @@ class MainActivity : AppCompatActivity(),
         wallpaperGalleryGridAdapter.dailyItemLongClickListener = this
         wallpaperGalleryGridAdapter.bingImageSelectedListener = this
         wallpaperGalleryGridAdapter.bingImageLongClickListener = this
+        wallpaperGalleryGridAdapter.isDailyOn = PreferencesUtil.isDailyModeOn(this)
+
         wallpaperGalleryGridRecyclerView.layoutManager = wallpaperGalleryGridLayoutManager
         wallpaperGalleryGridRecyclerView.adapter = wallpaperGalleryGridAdapter
-        wallpaperGalleryGridAdapter.isDailyOn = sharedPrefs.getBoolean(
-            getString(R.string.shared_prefs_app_globals_daily_mode_on),
-            false
-        )
 
         mainViewModel.previewImage.observe(this) { value ->
             if (value == null) {
