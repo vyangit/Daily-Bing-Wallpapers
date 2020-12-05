@@ -5,6 +5,7 @@ import android.app.WallpaperManager.FLAG_LOCK
 import android.app.WallpaperManager.FLAG_SYSTEM
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
@@ -37,6 +38,7 @@ class BingImageImportService : Service(), ForegroundService {
     private lateinit var network: BingImageApiNetwork
     private lateinit var repo: BingImageRepository
     private lateinit var wallpaperManager: WallpaperManager
+    private lateinit var globalSharedPrefs: SharedPreferences
 
     override fun onCreate() {
         super.onCreate()
@@ -45,6 +47,10 @@ class BingImageImportService : Service(), ForegroundService {
         network = BingImageApiNetwork.getService()
         repo = BingImageRepository(this, network, database.bingImageDao)
         wallpaperManager = WallpaperManager.getInstance(applicationContext)
+        globalSharedPrefs = getSharedPreferences(
+            getString(R.string.shared_prefs_app_globals_file_key),
+            Context.MODE_PRIVATE
+        )
 
         // Android 8 >= foreground promotion needed
         marshallNotificationChannel()
@@ -131,14 +137,9 @@ class BingImageImportService : Service(), ForegroundService {
     }
 
     private fun refreshDailyWallpaper() {
-        val sharedPrefs = getSharedPreferences(
-            getString(R.string.shared_prefs_app_globals_file_key),
-            Context.MODE_PRIVATE
-        )
-
         if (PreferencesUtil.isDailyModeOn(this) && wallpaperManager.isSetWallpaperAllowed) { // No change from last daily wallpaper set
             database.bingImageDao.mostRecentBingImage?.let { image ->
-                val lastDailyUpdateDate = sharedPrefs.getString(
+                val lastDailyUpdateDate = globalSharedPrefs.getString(
                     getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date),
                     ""
                 )
@@ -154,7 +155,7 @@ class BingImageImportService : Service(), ForegroundService {
                         val wallpaperId = setDailyImage(bingWallpaper)
 
                         // Update daily wallpaper refresh
-                        sharedPrefs.edit {
+                        globalSharedPrefs.edit {
                             putBoolean(
                                 getString(R.string.shared_prefs_app_globals_daily_mode_on),
                                 true
@@ -171,10 +172,6 @@ class BingImageImportService : Service(), ForegroundService {
                                         resources.getStringArray(R.array.root_preferences_header_wallpaper_target_values)[0]
                                     )
                             )
-                            putInt(
-                                getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
-                                wallpaperId
-                            )
                         }
 
                         // Send broadcast of wallpaper refresh
@@ -183,10 +180,10 @@ class BingImageImportService : Service(), ForegroundService {
                 }
             }
         } else { // Daily mode has been disrupted and should be toggled off
-            sharedPrefs.edit {
+            globalSharedPrefs.edit {
                 putBoolean(getString(R.string.shared_prefs_app_globals_daily_mode_on), false)
                 remove(getString(R.string.shared_prefs_app_globals_last_daily_mode_update_date))
-                remove(getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id))
+                remove(getString(R.string.shared_prefs_app_globals_recorded_system_wallpaper_id))
             }
         }
     }
@@ -199,7 +196,7 @@ class BingImageImportService : Service(), ForegroundService {
      *
      * @return The wallpaper id provided by {@link #WallpaperManager.getWallpaperId(Int)}
      */
-    private fun setDailyImage(bingWallpaper: Bitmap): Int {
+    private fun setDailyImage(bingWallpaper: Bitmap) {
         val wallpaperTargetValue = PreferenceManager
             .getDefaultSharedPreferences(this)
             .getString(
@@ -252,23 +249,39 @@ class BingImageImportService : Service(), ForegroundService {
         when (wallpaperTargetValue) {
             wallpaperTargetsArray[0] -> { // target is system
                 wallpaperManager.setBitmap(bingWallpaper, systemRect, true, FLAG_SYSTEM)
-                return wallpaperManager.getWallpaperId(FLAG_SYSTEM)
+                globalSharedPrefs.edit {
+                    putInt(
+                        getString(R.string.shared_prefs_app_globals_recorded_system_wallpaper_id),
+                        wallpaperManager.getWallpaperId(FLAG_SYSTEM)
+                    )
+                }
             }
             wallpaperTargetsArray[1] -> { // target is lock screen
                 wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
-                return wallpaperManager.getWallpaperId(FLAG_LOCK)
+                globalSharedPrefs.edit {
+                    putInt(
+                        getString(R.string.shared_prefs_app_globals_recorded_lock_wallpaper_id),
+                        wallpaperManager.getWallpaperId(FLAG_LOCK)
+                    )
+                }
             }
             wallpaperTargetsArray[2] -> { // target is system and lock screen
                 wallpaperManager.setBitmap(bingWallpaper, systemRect, true, FLAG_SYSTEM)
                 wallpaperManager.setBitmap(bingWallpaper, lockScreenRect, true, FLAG_LOCK)
-                return wallpaperManager.getWallpaperId(FLAG_SYSTEM)
+                globalSharedPrefs.edit {
+                    putInt(
+                        getString(R.string.shared_prefs_app_globals_recorded_system_wallpaper_id),
+                        wallpaperManager.getWallpaperId(FLAG_SYSTEM)
+                    )
+                    putInt(
+                        getString(R.string.shared_prefs_app_globals_recorded_lock_wallpaper_id),
+                        wallpaperManager.getWallpaperId(FLAG_LOCK)
+                    )
+                }
             }
             else -> {
                 //Do nothing
             }
         }
-
-        return 0 // Failure case
     }
-
 }

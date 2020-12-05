@@ -16,8 +16,12 @@ class PreferencesUtil {
             val wallpaperTargetsArray = context.resources.getStringArray(
                 R.array.root_preferences_header_wallpaper_target_values
             )
-            val recordedWallpaperId = sharedPrefs.getInt(
-                context.getString(R.string.shared_prefs_app_globals_recorded_wallpaper_id),
+            val recordedSystemWallpaperId = sharedPrefs.getInt(
+                context.getString(R.string.shared_prefs_app_globals_recorded_system_wallpaper_id),
+                -1
+            )
+            val recordedLockWallpaperId = sharedPrefs.getInt(
+                context.getString(R.string.shared_prefs_app_globals_recorded_lock_wallpaper_id),
                 -1
             )
             val lastWallpaperTarget = sharedPrefs.getString(
@@ -29,21 +33,29 @@ class PreferencesUtil {
                 false
             )
 
-            if (recordedWallpaperId == -1) return isDailyModeOn
+            if (recordedSystemWallpaperId == -1) return isDailyModeOn
 
             when (lastWallpaperTarget) {
                 wallpaperTargetsArray[0] -> {
                     isDailyModeOn = isDailyModeOn &&
-                            recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+                            recordedSystemWallpaperId == wallpaperManager.getWallpaperId(
+                        WallpaperManager.FLAG_SYSTEM
+                    )
                 }
                 wallpaperTargetsArray[1] -> {
                     isDailyModeOn = isDailyModeOn &&
-                            recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK)
+                            recordedLockWallpaperId == wallpaperManager.getWallpaperId(
+                        WallpaperManager.FLAG_LOCK
+                    )
                 }
                 wallpaperTargetsArray[2] -> {
                     isDailyModeOn = isDailyModeOn &&
-                            recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK) &&
-                            recordedWallpaperId == wallpaperManager.getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+                            recordedLockWallpaperId == wallpaperManager.getWallpaperId(
+                        WallpaperManager.FLAG_LOCK
+                    ) &&
+                            recordedSystemWallpaperId == wallpaperManager.getWallpaperId(
+                        WallpaperManager.FLAG_SYSTEM
+                    )
                 }
                 else -> {
                     // Do nothing
