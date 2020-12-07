@@ -95,9 +95,6 @@ class MainActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-//        if (::wallpaperGalleryGridAdapter.isInitialized) {
-//            wallpaperGalleryGridAdapter.isDailyOn = PreferencesUtil.isDailyModeOn(this)
-//        }
         requestStoragePermission {
             initExternalStorageViews()
 

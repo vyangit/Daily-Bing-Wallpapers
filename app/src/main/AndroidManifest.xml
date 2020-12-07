@@ -17,9 +17,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DailyBingWallpapers">
-        <activity
-            android:name=".app.activities.SettingsActivity"
-            android:label="@string/title_activity_settings"></activity>
 
         <activity android:name=".app.activities.MainActivity">
             <intent-filter>
@@ -27,6 +24,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".app.activities.SettingsActivity"
+            android:label="@string/title_activity_settings" />
 
         <receiver
             android:name=".app.receivers.ImportServiceReceiver"
