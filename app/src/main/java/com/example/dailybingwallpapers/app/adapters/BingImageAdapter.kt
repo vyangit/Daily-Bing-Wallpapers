@@ -16,25 +16,9 @@ import com.google.android.material.textview.MaterialTextView
 class BingImageAdapter :
     RecyclerView.Adapter<BingImageAdapter.BingImageViewHolder>() {
 
-    interface OnBingImageSelectedListener {
-        fun onBingImageSelected(bingImage: BingImage)
-    }
-
-    interface OnBingImageLongClickListener {
-        fun onBingImageLongClickListener(view: View, bingImage: BingImage)
-    }
-
-    interface OnDailyItemSelectedListener {
-        fun onDailyItemSelected()
-    }
-
-    interface OnDailyItemLongClickListener {
-        fun onDailyItemLongClick(view: View)
-    }
-
-    var bingImages: List<BingImage> = listOf()
-    var isDailyOn: Boolean = false
-        set(isOn: Boolean) {
+    var bingImages: List<BingImage> = listOf() // Images being served by adapter
+    var isDailyOn: Boolean = false // Sets state for the daily rendering based on app preference
+        set(isOn) {
             field = isOn
             notifyItemChanged(0)
         }
@@ -42,18 +26,6 @@ class BingImageAdapter :
     lateinit var bingImageLongClickListener: OnBingImageLongClickListener
     lateinit var dailyItemSelectedListener: OnDailyItemSelectedListener
     lateinit var dailyItemLongClickListener: OnDailyItemLongClickListener
-
-    class BingImageViewHolder(galleryLayout: View) :
-        RecyclerView.ViewHolder(galleryLayout) {
-        val imageView: ImageView = galleryLayout
-            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_image)
-        val dateText: MaterialTextView = galleryLayout
-            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_date)
-        val progressBar: ProgressBar = galleryLayout
-            .findViewById(R.id.activity_main_wallpapers_gallery_progress_bar)
-        val activeOverlay: RelativeLayout = galleryLayout
-            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_using_overlay)
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingImageViewHolder {
         val galleryLayout = LayoutInflater.from(parent.context)
@@ -116,4 +88,57 @@ class BingImageAdapter :
     override fun getItemCount(): Int {
         return bingImages.size + 1
     }
+
+    class BingImageViewHolder(galleryLayout: View) :
+        RecyclerView.ViewHolder(galleryLayout) {
+        val imageView: ImageView = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_image)
+        val dateText: MaterialTextView = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_date)
+        val progressBar: ProgressBar = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_progress_bar)
+        val activeOverlay: RelativeLayout = galleryLayout
+            .findViewById(R.id.activity_main_wallpapers_gallery_grid_item_using_overlay)
+    }
+
+    /**
+     * Event listener for when a click is detected on a bing image
+     */
+    interface OnBingImageSelectedListener {
+        /**
+         * Action to take when a click is detected on a bing image
+         */
+        fun onBingImageSelected(bingImage: BingImage)
+    }
+
+    /**
+     * Event listener for when a long click is detected on a bing image
+     */
+    interface OnBingImageLongClickListener {
+        /**
+         * Action to take when a long click is detected on a bing image
+         */
+        fun onBingImageLongClickListener(view: View, bingImage: BingImage)
+    }
+
+    /**
+     * Event listener for when the daily item rendering if selected
+     */
+    interface OnDailyItemSelectedListener {
+        /**
+         * Action to take when a click is detected on the daily item rendering
+         */
+        fun onDailyItemSelected()
+    }
+
+    /**
+     * Event listener for when a long click is detected on the daily item rendering
+     */
+    interface OnDailyItemLongClickListener {
+        /**
+         * Action to take when a long click is detected on the daily item rendering
+         */
+        fun onDailyItemLongClick(view: View)
+    }
+
 }

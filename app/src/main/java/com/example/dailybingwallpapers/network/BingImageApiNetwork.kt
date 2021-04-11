@@ -95,7 +95,7 @@ class BingImageApiNetwork {
     ): String {
         // Check if image already exists
         val resolver = context.contentResolver
-        var uri = getImageEntryUri(resolver, imageName)
+        val uri = getImageEntryUri(resolver, imageName)
         if (uri.isNotBlank()) return uri
 
         // Set up file descriptors to save to device and insert new entry
@@ -230,20 +230,21 @@ class BingImageApiNetwork {
             ""
         )!!
 
-        val externalContentUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
+        cursor.use { cursor ->
+            val externalContentUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            } else {
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            }
 
-        // Check if cursor returned valid uri
-        if (cursor.count != 0 && cursor.moveToFirst()) { // Image already exists
-            val id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID))
-            cursor.close()
-            return Uri.withAppendedPath(externalContentUri, id.toString()).toString()
-        }
+            // Check if cursor returned valid uri
+            if (cursor.count != 0 && cursor.moveToFirst()) { // Image already exists
+                val id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID))
+                return Uri.withAppendedPath(externalContentUri, id.toString()).toString()
+            }
 
-        // Default no valid uri provided
-        return ""
+            // Default no valid uri provided
+            return ""
+        }
     }
 }

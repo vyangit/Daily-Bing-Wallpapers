@@ -9,11 +9,10 @@ interface ForegroundService {
     fun promoteToForeground()
 
     companion object {
-        const val NOTIFICATION_ID_DEFAULT = 0
-        const val NOTIFICATION_ID_IMPORTER = 1
-        const val NOTIFICATION_ID_VALIDATOR = 2
+        const val NOTIFICATION_ID_DEFAULT = 0   // Notification id for general app alerts
+        const val NOTIFICATION_ID_IMPORTER = 1  // Notification id for alerts from importer services
 
-        const val NOTIFICATION_CHANNEL_ID_UPDATES = "UPDATES"
+        const val NOTIFICATION_CHANNEL_ID_UPDATES = "UPDATES" // Channel id for application update alerts
 
         const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
     }

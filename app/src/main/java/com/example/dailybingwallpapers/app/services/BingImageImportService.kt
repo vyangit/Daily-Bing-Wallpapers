@@ -31,8 +31,6 @@ import java.time.LocalDate
 import kotlin.math.floor
 import kotlin.math.min
 
-const val UPDATES_CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_LOW
-
 class BingImageImportService : Service(), ForegroundService {
     private lateinit var database: AppDatabase
     private lateinit var network: BingImageApiNetwork
@@ -52,7 +50,7 @@ class BingImageImportService : Service(), ForegroundService {
             Context.MODE_PRIVATE
         )
 
-        // Android 8 >= foreground promotion needed
+        // Android 8 >= foreground promotion needed for unassociated services
         marshallNotificationChannel()
         promoteToForeground()
     }
@@ -152,7 +150,7 @@ class BingImageImportService : Service(), ForegroundService {
                     // Get wallpaper and crop as needed
                     contentResolver.openInputStream(uri)?.use { inputStream ->
                         val bingWallpaper = BitmapFactory.decodeStream(inputStream)
-                        val wallpaperId = setDailyImage(bingWallpaper)
+                        setDailyImage(bingWallpaper)
 
                         // Update daily wallpaper refresh
                         globalSharedPrefs.edit {

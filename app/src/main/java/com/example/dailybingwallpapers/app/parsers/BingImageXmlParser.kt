@@ -15,6 +15,13 @@ private const val bingImageBaseUrlFormat = "https://www.bing.com%s_1920x1080.jpg
 
 class BingImageXmlParser {
 
+    /**
+     * Parses the bing image xml input stream
+     *
+     * @param xmlStream Bing images xml stream
+     *
+     * @return A list containing the meta data for each bing image in the xml stream
+     */
     @Throws(XmlPullParserException::class, IOException::class)
     fun parse(xmlStream: InputStream): List<BingImageMetaDataDTO> {
         xmlStream.use { xml ->

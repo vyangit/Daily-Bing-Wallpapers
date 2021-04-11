@@ -7,6 +7,13 @@ import com.example.dailybingwallpapers.R
 
 class PreferencesUtil {
     companion object {
+        /**
+         * Validates if daily mode should stay on.
+         *
+         * @param context
+         *
+         * @returns False if daily mode if off or if any target wallpapers are changed, else true
+         */
         fun isDailyModeOn(context: Context): Boolean {
             val wallpaperManager = WallpaperManager.getInstance(context)
             val sharedPrefs = context.getSharedPreferences(
@@ -66,6 +73,13 @@ class PreferencesUtil {
             return isDailyModeOn
         }
 
+        /**
+         * Checks if the user has changed which wallpapers should be changed upon refresh request
+         *
+         * @param context
+         *
+         * @return False if target mode has changed, else true
+         */
         fun hasDailyTargetModeChanged(context: Context): Boolean {
             val wallpaperTargetsArray = context.resources.getStringArray(
                 R.array.root_preferences_header_wallpaper_target_values
