@@ -221,13 +221,9 @@ class BingImageImportService : Service(), ForegroundService {
 
         // Create cropped center rect for lock screen wallpaper
         val metrics = DisplayMetrics()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            applicationContext.display?.getRealMetrics(metrics)
-        } else {
-            val windowManager = applicationContext.getSystemService(WINDOW_SERVICE) as WindowManager
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getRealMetrics(metrics)
-        }
+        val windowManager = applicationContext.getSystemService(WINDOW_SERVICE) as WindowManager
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(metrics)
 
         val deviceWidth: Float = metrics.widthPixels.toFloat()
         val deviceHeight: Float = metrics.heightPixels.toFloat()

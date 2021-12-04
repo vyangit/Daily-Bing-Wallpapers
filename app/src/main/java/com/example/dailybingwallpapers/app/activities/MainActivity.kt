@@ -140,6 +140,13 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        if (key == getString(R.string.shared_prefs_app_globals_daily_mode_on)) {
+            val isDailyOn = sharedPreferences?.getBoolean(key, false) ?: false
+            wallpaperGalleryGridAdapter.isDailyOn = isDailyOn
+        }
+    }
+
     override fun onBingImageSelected(bingImage: BingImage) {
         mainViewModel.onPreviewWallpaperSelected(bingImage)
     }
@@ -204,13 +211,6 @@ class MainActivity : AppCompatActivity(),
         val inflater = pMenu.menuInflater
         inflater.inflate(R.menu.menu_activity_main_gallery_daily_item, pMenu.menu)
         pMenu.show()
-    }
-
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        if (key == getString(R.string.shared_prefs_app_globals_daily_mode_on)) {
-            val isDailyOn = sharedPreferences?.getBoolean(key, false) ?: false
-            wallpaperGalleryGridAdapter.isDailyOn = isDailyOn
-        }
     }
 
     private fun requestStoragePermission(

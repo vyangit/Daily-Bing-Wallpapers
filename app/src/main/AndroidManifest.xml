@@ -18,7 +18,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DailyBingWallpapers">
 
-        <activity android:name=".app.activities.MainActivity">
+        <activity
+            android:name=".app.activities.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -27,7 +29,8 @@
 
         <activity
             android:name=".app.activities.SettingsActivity"
-            android:label="@string/title_activity_settings" />
+            android:label="@string/title_activity_settings"
+            android:exported="true"/>
 
         <receiver
             android:name=".app.receivers.ImportServiceReceiver"
@@ -43,7 +46,7 @@
         <service
             android:name=".app.services.BingImageImportService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="true" />
     </application>
 
 </manifest>
